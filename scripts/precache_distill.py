@@ -208,21 +208,26 @@ def stream_r1_subset(subset: str, domain: str) -> Iterator[dict]:
             )
 
 
-def stream_sonnet() -> Iterator[dict]:
-    """Roman1111111/claude-sonnet-4.6-120000x — auto-detect schema."""
+def stream_kimi() -> Iterator[dict]:
+    """ianncity/KIMI-K2.5-1000000x — Kimi K2.5 reasoning traces (replaces Sonnet).
+
+    K2.5 emits thinking in the assistant content, often with a <think> wrapper or
+    similar marker. The adapter splits these into our <|think|>/</|think|> tokens
+    so the trained model learns the same thinking-then-answering structure.
+    """
     from datasets import load_dataset
     try:
-        ds = load_dataset('Roman1111111/claude-sonnet-4.6-120000x', split='train', streaming=True)
+        ds = load_dataset('ianncity/KIMI-K2.5-1000000x', split='train', streaming=True)
     except Exception as e:
-        print(f'  ERROR loading Sonnet dataset: {e}')
+        print(f'  ERROR loading Kimi K2.5 dataset: {e}')
         return
     schema_logged = False
-    src = 'Roman1111111/claude-sonnet-4.6-120000x'
+    src = 'ianncity/KIMI-K2.5-1000000x'
     for i, r in enumerate(ds):
         if not schema_logged:
-            _log_schema('sonnet', r); schema_logged = True
+            _log_schema('kimi', r); schema_logged = True
 
-        # Messages-format first
+        # Messages-format first (most likely)
         msgs = r.get('messages') or r.get('conversation')
         if msgs and isinstance(msgs, list):
             user_msg = next((m.get('content', '') for m in msgs if m.get('role') == 'user'), '')
@@ -241,10 +246,21 @@ def stream_sonnet() -> Iterator[dict]:
                 )
                 continue
 
-        # prompt/output style
+        # Some Kimi-style dumps emit thinking in a separate field
         prompt = r.get('prompt') or r.get('input') or r.get('instruction') or r.get('question')
         output = r.get('output') or r.get('response') or r.get('completion') or r.get('answer')
+        thinking_field = r.get('thinking') or r.get('reasoning') or r.get('cot') or r.get('chain_of_thought')
         if prompt and output:
+            if thinking_field and isinstance(thinking_field, str) and thinking_field.strip():
+                # Explicit separate thinking field — use it directly
+                text = chat_format(str(prompt), str(output), str(thinking_field))
+                yield make_record(
+                    text=text, source=src, domain='lang',
+                    fmt='chat_with_thinking', has_thinking=True,
+                    metadata={'idx': i, 'fields': list(r.keys()), 'thinking_field': True},
+                )
+                continue
+            # Otherwise try to split <think>...</think> from output
             thinking, final = split_thinking(str(output))
             text = chat_format(str(prompt), final, thinking)
             yield make_record(
@@ -260,12 +276,21 @@ def stream_sonnet() -> Iterator[dict]:
         if isinstance(raw, list):
             raw = NL.join(str(t) for t in raw)
         if raw and isinstance(raw, str) and len(raw) > 100:
-            text = assistant_only_format(raw)
-            yield make_record(
-                text=text, source=src, domain='lang',
-                fmt='raw', has_thinking=False,
-                metadata={'idx': i, 'fields': list(r.keys())},
-            )
+            thinking, final = split_thinking(raw)
+            if thinking:
+                text = chat_format('Continue:', final, thinking)
+                yield make_record(
+                    text=text, source=src, domain='lang',
+                    fmt='chat_with_thinking', has_thinking=True,
+                    metadata={'idx': i, 'fields': list(r.keys())},
+                )
+            else:
+                text = assistant_only_format(raw)
+                yield make_record(
+                    text=text, source=src, domain='lang',
+                    fmt='raw', has_thinking=False,
+                    metadata={'idx': i, 'fields': list(r.keys())},
+                )
 
 
 def stream_drive_jsonl(path: str, source_label: str, domain: str) -> Iterator[dict]:
@@ -380,28 +405,39 @@ def main():
     p = argparse.ArgumentParser()
     p.add_argument('--target-dir', default='/content/distill_data')
     p.add_argument('--drive-cache', default='/content/drive/MyDrive/crowfeather_50m_v1/distill_data')
-    p.add_argument('--budget-mb', type=int, default=8000)
+    p.add_argument('--budget-mb', type=int, default=8000,
+                   help='total cap (math/lang/code split 30/40/30); ignored if --unlimited')
+    p.add_argument('--unlimited', action='store_true',
+                   help='download every source in full; ignores --budget-mb')
     p.add_argument('--force-refresh', action='store_true',
                    help='delete existing per-source JSONLs first (always recombines per-domain)')
     args = p.parse_args()
     os.makedirs(args.target_dir, exist_ok=True)
 
-    BUDGET_MATH = int(args.budget_mb * 0.30 * 1e6)
-    BUDGET_LANG = int(args.budget_mb * 0.40 * 1e6)
-    BUDGET_CODE = int(args.budget_mb * 0.30 * 1e6)
-
-    print(f'Total budget:   {args.budget_mb} MB')
-    print(f'  math (30%): {BUDGET_MATH/1e6:.0f} MB')
-    print(f'  lang (40%): {BUDGET_LANG/1e6:.0f} MB')
-    print(f'  code (30%): {BUDGET_CODE/1e6:.0f} MB')
+    if args.unlimited:
+        # Effectively infinite per-source budget; user manages Drive space
+        BUDGET_MATH = BUDGET_LANG = BUDGET_CODE = int(1e15)
+        print('UNLIMITED mode: every source downloaded in full.')
+        print('  Make sure you have at least 50-100 GB free on Drive.')
+    else:
+        BUDGET_MATH = int(args.budget_mb * 0.30 * 1e6)
+        BUDGET_LANG = int(args.budget_mb * 0.40 * 1e6)
+        BUDGET_CODE = int(args.budget_mb * 0.30 * 1e6)
+        print(f'Total budget:   {args.budget_mb} MB')
+        print(f'  math (30%): {BUDGET_MATH/1e6:.0f} MB')
+        print(f'  lang (40%): {BUDGET_LANG/1e6:.0f} MB')
+        print(f'  code (30%): {BUDGET_CODE/1e6:.0f} MB')
     print(f'Output dir:     {args.target_dir}')
     print(f'Drive cache:    {args.drive_cache}')
 
+    # Per-source char budget. In --unlimited, all are int(1e15) so no source caps out.
+    # Within a domain, budgeted weights set rough proportions when bounded.
     SOURCES = [
         ('numinamath', 'math', stream_numinamath,                          int(BUDGET_MATH * 0.40)),
         ('metamathqa', 'math', stream_metamathqa,                          int(BUDGET_MATH * 0.30)),
         ('r1_math',    'math', lambda: stream_r1_subset('math', 'math'),   int(BUDGET_MATH * 0.30)),
-        ('sonnet',     'lang', stream_sonnet,                              int(BUDGET_LANG * 0.55)),
+        # Lang sources: Kimi K2.5 (replaces Sonnet) provides reasoning traces
+        ('kimi',       'lang', stream_kimi,                                int(BUDGET_LANG * 0.55)),
         ('r1_science', 'lang', lambda: stream_r1_subset('science', 'lang'),int(BUDGET_LANG * 0.30)),
         ('opus',       'lang', lambda: stream_drive_jsonl(
                                   f'{args.drive_cache}/opus_4_6.jsonl',
@@ -439,7 +475,7 @@ def main():
 
     DOMAINS = {
         'math': ['numinamath', 'metamathqa', 'r1_math'],
-        'lang': ['sonnet', 'r1_science', 'opus'],
+        'lang': ['kimi', 'r1_science', 'opus'],
         'code': ['r1_code'],
     }
     for d, srcs in DOMAINS.items():

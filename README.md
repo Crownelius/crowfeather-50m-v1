@@ -3,7 +3,7 @@
 [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Crownelius/crowfeather-50m-v1/blob/main/notebooks/crowfeather_50m_v1.ipynb)
 [![License](https://img.shields.io/badge/license-Apache_2.0-blue.svg)](LICENSE)
 
-A 50.8M-parameter dense Qwen3 language model trained on consumer-grade hardware. Custom 32K Byte-Level BPE tokenizer with per-digit number wrap and Fill-in-the-Middle (FIM) support. Distillation-pretrained on traces from DeepSeek R1, Anthropic Sonnet 4.6, NuminaMath-CoT, MetaMathQA, and Anthropic Opus 4.6. Released under Apache 2.0.
+A 50.8M-parameter dense Qwen3 language model trained on consumer-grade hardware. Custom 32K Byte-Level BPE tokenizer with per-digit number wrap and Fill-in-the-Middle (FIM) support. **Reasoning-heavy distillation pretrain** on traces from DeepSeek R1, Moonshot Kimi K2.5, NuminaMath-CoT, MetaMathQA, and Anthropic Opus 4.6. Every source contributes thinking traces wrapped in `<|think|>...</|think|>` tokens so the model learns to think-then-answer. Released under Apache 2.0.
 
 This repo is a direct upgrade of [`CompactAI-O/Shard-40m-v1`](https://huggingface.co/CompactAI-O/Shard-40m-v1) (54.5M dense, 8K BPE, MHA, no distillation): every architectural lever is the next sensible step from that baseline.
 
@@ -43,7 +43,7 @@ Pre-launch. Training begins after this commit lands.
 
 | Lever | Shard-40m-v1 | Crowfeather-50M-v1 | Why |
 |---|---|---|---|
-| Pretrain corpus | raw web text | 100% distillation (R1 + Sonnet + NuminaMath + MetaMathQA + Opus) | sample efficiency |
+| Pretrain corpus | raw web text | 100% distillation (R1 + Kimi K2.5 + NuminaMath + MetaMathQA + Opus) | sample efficiency + thinking traces |
 | Tokenizer vocab | 8K | 32K | 4x more single-token words |
 | Tokenizer special tokens | basic | + FIM (3) + chat roles + think tags | infill capability |
 | Number handling | none | per-digit wrap | math arithmetic |
@@ -223,7 +223,7 @@ Special tokens (IDs 0-17):
 | Domain | Sources | Mix weight |
 |---|---|---|
 | Math | NuminaMath-CoT (40%), MetaMathQA (30%), DeepSeek R1 math (30%) | 30% |
-| Language | Sonnet 4.6 (55%), R1 science (30%), Opus 4.6 (15%) | 40% |
+| Language | Kimi K2.5 (55%), R1 science (30%), Opus 4.6 (15%) | 40% |
 | Code | DeepSeek R1 code subset (100%) | 30% |
 
 Same mix across all phases.

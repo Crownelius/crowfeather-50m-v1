@@ -7,7 +7,7 @@ before wasting time on a 30-min precache that produces empty files.
 
 Usage:
     python diagnose_datasets.py
-    python diagnose_datasets.py --dataset sonnet  # just one
+    python diagnose_datasets.py --dataset kimi  # just one
 """
 import argparse, json, sys
 
@@ -54,7 +54,7 @@ def main():
     p = argparse.ArgumentParser()
     p.add_argument('--dataset', default='all',
                    choices=['all', 'numinamath', 'metamathqa', 'r1_math', 'r1_science',
-                            'r1_code', 'r1_default', 'sonnet'])
+                            'r1_code', 'r1_default', 'kimi'])
     p.add_argument('--n-samples', type=int, default=2)
     args = p.parse_args()
 
@@ -65,7 +65,7 @@ def main():
         'r1_math':     ('open-r1/Mixture-of-Thoughts', 'math'),
         'r1_science':  ('open-r1/Mixture-of-Thoughts', 'science'),
         'r1_code':     ('open-r1/Mixture-of-Thoughts', 'code'),
-        'sonnet':      ('Roman1111111/claude-sonnet-4.6-120000x', None),
+        'kimi':        ('ianncity/KIMI-K2.5-1000000x', None),
     }
 
     if args.dataset == 'all':

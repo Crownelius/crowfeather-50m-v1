@@ -64,7 +64,7 @@ Variants:
   <|assistant|>
   ...
   ```
-- **No user prompt available** (raw assistant data, e.g. some Sonnet/Opus dumps):
+- **No user prompt available** (raw assistant data, e.g. some Opus dumps):
   ```
   <|assistant|>
   {raw text}
@@ -84,7 +84,7 @@ The trainer (`train_dense.py`) appends `<|eos|>` between concatenated docs at pa
 | R1-math | `open-r1/Mixture-of-Thoughts` (`math`) | math | `chat_with_thinking` | DeepSeek R1 traces; `<think>` always present |
 | R1-science | `open-r1/Mixture-of-Thoughts` (`science`) | lang | `chat_with_thinking` | Same |
 | R1-code | `open-r1/Mixture-of-Thoughts` (`code`) | code | `chat_with_thinking` | Same |
-| Sonnet 4.6 | `Roman1111111/claude-sonnet-4.6-120000x` | lang | `chat` / `chat_with_thinking` | Tries `messages` then `prompt`/`output` then raw `text` |
+| Kimi K2.5 | `ianncity/KIMI-K2.5-1000000x` | lang | `chat_with_thinking` / `chat` | Reasoning traces (1M samples). Tries `messages`, then `prompt`/`output` with optional separate `thinking`/`reasoning`/`cot` field, then raw `text`. Splits embedded `<think>...</think>` into our `<\|think\|>...</\|think\|>` tokens. |
 | Opus 4.6 | local Drive JSONL | lang | `chat` / `raw` | User-curated; lives at `{DRIVE_ROOT}/distill_data/opus_4_6.jsonl` |
 
 The R1 adapter (`stream_r1_subset`) is robust to schema drift across the three Mixture-of-Thoughts configs: tries `messages` first, then `prompt`/`completion`, then raw `text`. If a future dataset rev breaks the adapter, `scripts/diagnose_datasets.py` prints the actual schema for quick debugging.
@@ -98,7 +98,7 @@ After per-source download, the precache builds:
 | File | Sources | Mix proportion (8 GB total budget) |
 |---|---|---|
 | `math.jsonl` | numinamath (40%), metamathqa (30%), r1_math (30%) | 30% (~2400 MB) |
-| `lang.jsonl` | sonnet (55%), r1_science (30%), opus (15%) | 40% (~3200 MB) |
+| `lang.jsonl` | kimi (55%), r1_science (30%), opus (15%) | 40% (~3200 MB in budget mode; full corpus in `--unlimited`) |
 | `code.jsonl` | r1_code (100%) | 30% (~2400 MB) |
 
 The trainer's `make_mixed` reads from these three combined files at the configured weights (math 0.30 / lang 0.40 / code 0.30).
@@ -115,7 +115,7 @@ The old precache wrote `{"text": "..."}` with no metadata. To detect old-format 
 
 ```bash
 python scripts/diagnose_datasets.py
-python scripts/diagnose_datasets.py --dataset sonnet  # one at a time
+python scripts/diagnose_datasets.py --dataset kimi  # one at a time
 ```
 
 Prints the schema (field names, types, content previews) of the first 1-2 records of each registered dataset. ~30-60 sec total. Run this before bulk download if you suspect schema drift.
