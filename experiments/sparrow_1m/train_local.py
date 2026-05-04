@@ -48,15 +48,21 @@ def load_corpus_bytes(path: str) -> list:
 def packed_batch_iter(ids: list, batch_size: int, seq_len: int,
                      rng: random.Random) -> Iterator:
     """Yield (input_ids, labels) tensors of shape [batch_size, seq_len].
-    Sampling: pick random start positions in the corpus per batch element.
+
+    CRITICAL: labels = input_ids (NOT pre-shifted). HuggingFace's
+    Qwen3ForCausalLM.forward(labels=...) does its own shift internally
+    (shift_labels = labels[..., 1:]). Passing pre-shifted labels here
+    causes an off-by-one (model trained to predict 2 positions ahead),
+    which silently produces low loss but a model that emits the wrong
+    token at inference.
     """
     n = len(ids)
-    if n < seq_len + 2:
-        raise RuntimeError(f'corpus too small: {n} tokens, need at least {seq_len + 2}')
+    if n < seq_len + 1:
+        raise RuntimeError(f'corpus too small: {n} tokens, need at least {seq_len + 1}')
     while True:
-        starts = [rng.randint(0, n - seq_len - 2) for _ in range(batch_size)]
+        starts = [rng.randint(0, n - seq_len - 1) for _ in range(batch_size)]
         inp = torch.tensor([ids[s:s + seq_len] for s in starts], dtype=torch.long)
-        tgt = torch.tensor([ids[s + 1:s + seq_len + 1] for s in starts], dtype=torch.long)
+        tgt = inp.clone()  # HF does its own shift; passing same as input is correct
         yield inp, tgt
 
 
