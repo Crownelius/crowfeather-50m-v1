@@ -256,6 +256,8 @@ docs/
   MATH.md                    # all derivations with proofs
   ARCHITECTURE.md            # block-by-block deep dive
   TRAINING.md                # phase recipes + resume logic
+  DATA_FORMAT.md             # unified record schema (data dictionary)
+  OPTIMAL_FORMAT.md          # canonical training-text spec (what records SHOULD look like)
   future/
     CROWFEATHER-412M-3E.md   # sibling/successor 412M MoE plan (deferred)
 notebooks/
@@ -265,7 +267,10 @@ scripts/
   muon.py                    # Muon V4 + min_sv sentinel + AdamW split
   train_bpe.py               # Phase 0: train 32K BPE on distillation corpus
   build_init.py              # build fresh dense Qwen3 50M from tokenizer
-  precache_distill.py        # per-domain JSONL emitter
+  precache_distill.py        # per-domain JSONL emitter (used by both Colab + local)
+  download_local.py          # local-machine wrapper around precache_distill (E:/ drive default)
+  diagnose_datasets.py       # ~60s schema inspector for each source dataset
+  sonnet_convert.py          # Anthropic API conversion of rows into the optimal format
   train_dense.py             # Phase 1/2/3 trainer with FIM data aug + Liger
 LICENSE                      # Apache 2.0
 ```
