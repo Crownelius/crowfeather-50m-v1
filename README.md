@@ -16,6 +16,10 @@ Click the badge above. Inside Colab:
 
 Total ~11-13h on A100 80GB at ~$15-20 PAYG (1-2 Colab Pro sessions).
 
+### Before the full run: verify your GPU envelope (~5 min)
+
+If you're on an A100 40GB, run the [limit-test notebook](https://colab.research.google.com/github/Crownelius/crowfeather-50m-v1/blob/main/notebooks/a100_40gb_limit_test.ipynb) first. It uses synthetic data (no precache, no BPE training) to confirm Phase 1/2/3 each fit at the 40GB-adjusted batch sizes, and projects wall time + cost from measured throughput. PASS = green light to launch the main notebook.
+
 ---
 
 ## Status
@@ -254,7 +258,8 @@ docs/
   future/
     CROWFEATHER-412M-3E.md   # sibling/successor 412M MoE plan (deferred)
 notebooks/
-  crowfeather_50m_v1.ipynb   # the training notebook (Phase 0 + 3-phase pipeline)
+  crowfeather_50m_v1.ipynb     # the training notebook (Phase 0 + 3-phase pipeline)
+  a100_40gb_limit_test.ipynb   # ~5-min synthetic-data test, verifies all phases fit on 40GB
 scripts/
   muon.py                    # Muon V4 + min_sv sentinel + AdamW split
   train_bpe.py               # Phase 0: train 32K BPE on distillation corpus
