@@ -180,6 +180,40 @@ Never invent content. If you cannot extract a clean version that preserves the o
 
 ---
 
+## Recommended workflow: deterministic conversion + Sonnet verification
+
+The cheapest path to high-quality data is:
+
+1. **Deterministic conversion** (free, fast). `scripts/precache_distill.py` already enforces our format at adapter level — every record comes out in unified schema with the right tokens. ~5-10 GB/hour throughput.
+
+2. **Sonnet verification** (~$25 per 5K-row check). `scripts/sonnet_verify.py` samples N rows stratified across `web.jsonl` / `math.jsonl` / `lang.jsonl` / `code.jsonl`, sends each to Sonnet 4.6 with a strict QA prompt, and aggregates pass/fail/borderline rates plus a top-10 issue-tag breakdown.
+
+3. **Iterate on the deterministic step** (free). Sonnet's most-common issue tags point you at specific bugs in the precache adapters: `mojibake` → add `ftfy.fix_text` to the adapter; `empty_thinking` → tighten the `chat_with_thinking` filter; `boilerplate` → strip per-source headers/footers; etc.
+
+4. **Re-verify** until pass rate >=90%. Then train on the deterministic output. Total verification cost across 3-5 iterations: ~$75-150 vs ~$70K for full Sonnet conversion.
+
+**When to escalate to full Sonnet conversion** (`scripts/sonnet_convert.py`): only if the deterministic step's pass rate plateaus below 80% even after iteration. In practice this happens for low-quality user-curated dumps (badly-scraped web, unverified Sonnet/Opus traces). For HF-hosted datasets (FineWeb-Edu, NuminaMath, R1, Kimi K2.5, MetaMathQA) the deterministic adapter usually clears 90%+ on first pass.
+
+### Issue-tag → adapter-fix mapping
+
+| Sonnet issue tag | What it means | Fix in precache adapter |
+|---|---|---|
+| `mojibake` | UTF-8 double-encoded or corrupt | Add `ftfy.fix_text(s)` before yielding |
+| `broken_html` | Tags/entities in supposedly-clean text | Add `bs4.BeautifulSoup(s, 'lxml').get_text()` or stricter regex |
+| `empty_thinking` | `<\|think\|></\|think\|>` with no content | Drop record or downgrade format to `chat` |
+| `wrong_format` | Web record has chat tokens, or vice-versa | Bug in adapter — assert format matches domain |
+| `untrainable_noise` | Random characters, encoding garbage | Add a Shannon-entropy filter to the adapter |
+| `ad_text` | "Subscribe now", "Click here", SEO spam | Source-specific blocklist (mostly for web/Opus) |
+| `boilerplate` | Headers, footers, nav menus | Per-source aggressive trim of first/last N lines |
+| `near_duplicate` | Same content, different wording | Add MinHash dedup pass after precache |
+| `truncated_midsentence` | Cut off in the middle of a token/word | Adapter dropping 8K-char clips on word boundary |
+| `ascii_art` | Banner art, table-of-contents bars | Drop records with >30 lines of repeating chars |
+| `non_english` | Foreign-language doc when we want English | Add `language_score` filter (FineWeb-Edu has this in metadata) |
+| `code_only_no_explanation` | Pure code dump in `domain=code` reasoning | Drop records where assistant content is `^\s*```` |
+| `thinking_just_repeats_question` | Reasoning lacks substance | Drop if `<\|think\|>` content is <100 chars or >70% overlap with prompt |
+
+---
+
 ## Format conformance check
 
 The converter writes a per-row metadata field `metadata.format_validated: true` if the output passes these checks:

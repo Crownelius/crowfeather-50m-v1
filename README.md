@@ -270,7 +270,8 @@ scripts/
   precache_distill.py        # per-domain JSONL emitter (used by both Colab + local)
   download_local.py          # local-machine wrapper around precache_distill (E:/ drive default)
   diagnose_datasets.py       # ~60s schema inspector for each source dataset
-  sonnet_convert.py          # Anthropic API conversion of rows into the optimal format
+  sonnet_verify.py           # Sonnet QA on a stratified sample (~$25/5K rows; recommended)
+  sonnet_convert.py          # Sonnet rewrite of every row (~$70K/5M rows; only if verify reveals deep issues)
   train_dense.py             # Phase 1/2/3 trainer with FIM data aug + Liger
 LICENSE                      # Apache 2.0
 ```
