@@ -1,8 +1,20 @@
 # Crowfeather-50M-v1
 
+[![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Crownelius/crowfeather-50m-v1/blob/main/notebooks/crowfeather_50m_v1.ipynb)
+[![License](https://img.shields.io/badge/license-Apache_2.0-blue.svg)](LICENSE)
+
 A 50.8M-parameter dense Qwen3 language model trained on consumer-grade hardware. Custom 32K Byte-Level BPE tokenizer with per-digit number wrap and Fill-in-the-Middle (FIM) support. Distillation-pretrained on traces from DeepSeek R1, Anthropic Sonnet 4.6, NuminaMath-CoT, MetaMathQA, and Anthropic Opus 4.6. Released under Apache 2.0.
 
 This repo is a direct upgrade of [`CompactAI-O/Shard-40m-v1`](https://huggingface.co/CompactAI-O/Shard-40m-v1) (54.5M dense, 8K BPE, MHA, no distillation): every architectural lever is the next sensible step from that baseline.
+
+## Open in Colab → run all → done
+
+Click the badge above. Inside Colab:
+1. **Runtime → Change runtime type → A100 GPU** (80GB recommended; 40GB supported)
+2. **Set Colab Secrets** (key icon in left sidebar): `HF_TOKEN` and `WANDB_API_KEY`
+3. **Runtime → Run all** (Ctrl+F9). The notebook is fully resumable; if Colab disconnects, just re-run from the top.
+
+Total ~11-13h on A100 80GB at ~$15-20 PAYG (1-2 Colab Pro sessions).
 
 ---
 
@@ -256,13 +268,32 @@ LICENSE                      # Apache 2.0
 
 ## How to run
 
-1. Open `notebooks/crowfeather_50m_v1.ipynb` in Google Colab
-2. Connect to an A100 (80GB recommended; 40GB fits with adjusted batch sizes)
-3. Run cells top to bottom: setup -> precache -> Phase 0 BPE -> build init -> Phase 1 -> Phase 2 -> Phase 3 -> benchmark -> push to HF Hub
-4. Total wall time on A100 80GB: ~11-13 hours (1-2 Colab sessions)
-5. Total cost: ~$15-20 PAYG
+The "Open in Colab" badge at the top is the fast path. For the full breakdown:
 
-The notebook is checkpoint-resumable. If a session disconnects, reopen and re-run; each phase skips if its `final/` directory already exists.
+1. **Click the Colab badge** (or [direct URL](https://colab.research.google.com/github/Crownelius/crowfeather-50m-v1/blob/main/notebooks/crowfeather_50m_v1.ipynb))
+2. **Set runtime to A100**: Runtime → Change runtime type → A100 GPU (80GB recommended; 40GB triggers auto batch adjust)
+3. **Set Colab Secrets** (key icon, left sidebar):
+   - `HF_TOKEN` from https://huggingface.co/settings/tokens (write access for HF push)
+   - `WANDB_API_KEY` from https://wandb.ai/authorize (read-only fine)
+4. **Runtime → Run all** (Ctrl+F9). Walks the full pipeline: setup → precache → Phase 0 BPE → build init → smoke test → Phase 1 → Phase 2 → Phase 3 → eval → HF push.
+
+### Wall time + cost
+
+| Phase | A100 80GB | A100 40GB | Notes |
+|---|---|---|---|
+| Setup + auth + precache | ~45 min | ~45 min | one-time per Drive |
+| Phase 0 BPE training | ~30 min | ~30 min | CPU-bound |
+| Phase 1 pretrain (40K steps) | ~4-5h | ~5-6h | the long one |
+| Phase 2 CPT (2.5K @ 16K) | ~1.5h | ~2h | |
+| Phase 3 SFT (2.5K @ 4K) | ~20 min | ~25 min | |
+| Eval + HF push | ~10 min | ~10 min | |
+| **Total** | **~11-13h** | **~13-15h** | |
+
+At Colab Pro PAYG (~$1.50/hr A100), **$15-20 end-to-end**.
+
+### Resume logic
+
+Every phase skips if its `final/` directory already exists in your Drive. Within a phase, training resumes from the latest `step_*` checkpoint (saved every 2,500 steps for Phase 1, every 500 for Phases 2/3). Distillation cache is mirrored to Drive so reconnecting sessions hydrate without re-downloading from HuggingFace.
 
 ---
 
