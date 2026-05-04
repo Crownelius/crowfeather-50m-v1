@@ -3,7 +3,7 @@
 [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Crownelius/crowfeather-50m-v1/blob/main/notebooks/crowfeather_50m_v1.ipynb)
 [![License](https://img.shields.io/badge/license-Apache_2.0-blue.svg)](LICENSE)
 
-A 50.8M-parameter dense Qwen3 language model trained on consumer-grade hardware. Custom 32K Byte-Level BPE tokenizer with per-digit number wrap and Fill-in-the-Middle (FIM) support. **Reasoning-heavy distillation pretrain** on traces from DeepSeek R1, Moonshot Kimi K2.5, NuminaMath-CoT, MetaMathQA, and Anthropic Opus 4.6. Every source contributes thinking traces wrapped in `<|think|>...</|think|>` tokens so the model learns to think-then-answer. Released under Apache 2.0.
+A 50.8M-parameter dense Qwen3 language model trained on consumer-grade hardware. Custom 32K Byte-Level BPE tokenizer with per-digit number wrap and Fill-in-the-Middle (FIM) support. **Foundation + reasoning pretrain**: 40% FineWeb-Edu (quality-filtered English web text) for fluency, 60% reasoning distillation from DeepSeek R1, Moonshot Kimi K2.5, NuminaMath-CoT, MetaMathQA, and Anthropic Opus 4.6. Reasoning sources contribute thinking traces wrapped in `<|think|>...</|think|>` tokens so the model learns to think-then-answer. Released under Apache 2.0.
 
 This repo is a direct upgrade of [`CompactAI-O/Shard-40m-v1`](https://huggingface.co/CompactAI-O/Shard-40m-v1) (54.5M dense, 8K BPE, MHA, no distillation): every architectural lever is the next sensible step from that baseline.
 
@@ -218,15 +218,16 @@ Special tokens (IDs 0-17):
 | 2 — Continued Pretrain | 16,384 | 2,500 | 2 | 2 | 6e-5 | 6e-6 | 0.0 |
 | 3 — SFT | 4,096 | 2,500 | 4 | 2 | 4e-5 | 4e-6 | 0.0 |
 
-### Distillation data mix
+### Data mix
 
 | Domain | Sources | Mix weight |
 |---|---|---|
-| Math | NuminaMath-CoT (40%), MetaMathQA (30%), DeepSeek R1 math (30%) | 30% |
-| Language | Kimi K2.5 (55%), R1 science (30%), Opus 4.6 (15%) | 40% |
-| Code | DeepSeek R1 code subset (100%) | 30% |
+| Web | FineWeb-Edu sample-10BT (100%) | **40%** |
+| Math | NuminaMath-CoT (40%), MetaMathQA (30%), DeepSeek R1 math (30%) | 25% |
+| Language | Kimi K2.5 (55%), R1 science (30%), Opus 4.6 (15%) | 20% |
+| Code | DeepSeek R1 code subset (100%) | 15% |
 
-Same mix across all phases.
+Web is the foundational English-fluency source (raw documents, no chat structure). Reasoning sources (60% combined) contribute the thinking-then-answer behavior. Same mix across all training phases.
 
 ---
 

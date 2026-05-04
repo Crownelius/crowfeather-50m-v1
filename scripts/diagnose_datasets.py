@@ -53,12 +53,13 @@ def diagnose(name: str, hf_id: str, config: str = None, n_samples: int = 2):
 def main():
     p = argparse.ArgumentParser()
     p.add_argument('--dataset', default='all',
-                   choices=['all', 'numinamath', 'metamathqa', 'r1_math', 'r1_science',
-                            'r1_code', 'r1_default', 'kimi'])
+                   choices=['all', 'fineweb_edu', 'numinamath', 'metamathqa',
+                            'r1_math', 'r1_science', 'r1_code', 'r1_default', 'kimi'])
     p.add_argument('--n-samples', type=int, default=2)
     args = p.parse_args()
 
     REGISTRY = {
+        'fineweb_edu': ('HuggingFaceFW/fineweb-edu', 'sample-10BT'),
         'numinamath':  ('AI-MO/NuminaMath-CoT', None),
         'metamathqa':  ('meta-math/MetaMathQA', None),
         'r1_default':  ('open-r1/Mixture-of-Thoughts', 'default'),

@@ -79,6 +79,7 @@ The trainer (`train_dense.py`) appends `<|eos|>` between concatenated docs at pa
 
 | Source dataset | HF ID (config) | Domain | Format | Notes |
 |---|---|---|---|---|
+| FineWeb-Edu | `HuggingFaceFW/fineweb-edu` (`sample-10BT`) | web | `raw` | Quality-filtered educational web text. Raw documents (no chat structure). The English-fluency foundation. ~30 GB / 10B tokens. ODC-By 1.0. |
 | NuminaMath-CoT | `AI-MO/NuminaMath-CoT` | math | `qa` / `chat_with_thinking` | Splits `<think>` blocks if present in `solution` |
 | MetaMathQA | `meta-math/MetaMathQA` | math | `qa` | `query` + `response` |
 | R1-math | `open-r1/Mixture-of-Thoughts` (`math`) | math | `chat_with_thinking` | DeepSeek R1 traces; `<think>` always present |
@@ -95,13 +96,14 @@ The R1 adapter (`stream_r1_subset`) is robust to schema drift across the three M
 
 After per-source download, the precache builds:
 
-| File | Sources | Mix proportion (8 GB total budget) |
-|---|---|---|
-| `math.jsonl` | numinamath (40%), metamathqa (30%), r1_math (30%) | 30% (~2400 MB) |
-| `lang.jsonl` | kimi (55%), r1_science (30%), opus (15%) | 40% (~3200 MB in budget mode; full corpus in `--unlimited`) |
-| `code.jsonl` | r1_code (100%) | 30% (~2400 MB) |
+| File | Sources | Mix proportion (8 GB total budget) | Training-time weight |
+|---|---|---|---|
+| `web.jsonl` | fineweb_edu (100%) | 40% (~3200 MB) | 40% |
+| `math.jsonl` | numinamath (40%), metamathqa (30%), r1_math (30%) | 25% (~2000 MB) | 25% |
+| `lang.jsonl` | kimi (55%), r1_science (30%), opus (15%) | 20% (~1600 MB) | 20% |
+| `code.jsonl` | r1_code (100%) | 15% (~1200 MB) | 15% |
 
-The trainer's `make_mixed` reads from these three combined files at the configured weights (math 0.30 / lang 0.40 / code 0.30).
+In `--unlimited` mode, every per-source file is downloaded in full (no truncation); combined files contain everything. The trainer's `make_mixed` reads from the four combined files at the training-time weights above.
 
 ---
 

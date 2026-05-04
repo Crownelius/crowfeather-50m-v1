@@ -94,6 +94,52 @@ def _log_schema(name: str, sample: dict):
 
 # ----- Per-dataset adapters -------------------------------------------------
 
+def stream_fineweb_edu(subset: str = 'sample-10BT') -> Iterator[dict]:
+    """HuggingFaceFW/fineweb-edu — quality-filtered educational English web text.
+
+    The foundational language source. Unlike the reasoning-heavy sources (Kimi,
+    R1, NuminaMath), this is raw web text with no chat structure — just documents
+    the model learns to continue fluently. Provides the English-fluency baseline
+    that chat/reasoning data builds on. ODC-By 1.0 license.
+
+    Configs: 'sample-10BT' (~30 GB, 10B tokens — sweet spot for sub-1B models),
+             'sample-100BT' (~300 GB), 'sample-350BT' (~1 TB), 'default' (1.3T).
+    """
+    from datasets import load_dataset
+    try:
+        ds = load_dataset('HuggingFaceFW/fineweb-edu', subset, split='train', streaming=True)
+    except Exception as e:
+        print(f'  ERROR loading HuggingFaceFW/fineweb-edu:{subset}: {e}')
+        print(f'  -> the dataset is gated; check your HF_TOKEN has read access')
+        return
+    schema_logged = False
+    src = f'HuggingFaceFW/fineweb-edu:{subset}'
+    for i, r in enumerate(ds):
+        if not schema_logged:
+            _log_schema('fineweb_edu', r); schema_logged = True
+        text = r.get('text', '')
+        if not text or not isinstance(text, str) or len(text) < 100:
+            continue
+        # Raw text — no special token wrapping. The trainer adds EOS at packing
+        # time. Mixing raw web text with chat-formatted text is standard practice
+        # (Phi, MiniCPM, OLMo all do this).
+        yield make_record(
+            text=text,
+            source=src,
+            domain='web',
+            fmt='raw',
+            has_thinking=False,
+            metadata={
+                'idx': i,
+                'url': r.get('url', ''),
+                'language_score': r.get('language_score', 0.0),
+                'edu_score': r.get('score', 0.0),
+                'token_count': r.get('token_count', 0),
+                'dump': r.get('dump', ''),
+            },
+        )
+
+
 def stream_numinamath() -> Iterator[dict]:
     """AI-MO/NuminaMath-CoT — fields: problem, solution, source, messages."""
     from datasets import load_dataset
@@ -416,33 +462,41 @@ def main():
 
     if args.unlimited:
         # Effectively infinite per-source budget; user manages Drive space
-        BUDGET_MATH = BUDGET_LANG = BUDGET_CODE = int(1e15)
+        BUDGET_WEB = BUDGET_MATH = BUDGET_LANG = BUDGET_CODE = int(1e15)
         print('UNLIMITED mode: every source downloaded in full.')
-        print('  Make sure you have at least 50-100 GB free on Drive.')
+        print('  Make sure you have at least 60-100 GB free on Drive.')
     else:
-        BUDGET_MATH = int(args.budget_mb * 0.30 * 1e6)
-        BUDGET_LANG = int(args.budget_mb * 0.40 * 1e6)
-        BUDGET_CODE = int(args.budget_mb * 0.30 * 1e6)
+        # Mix: web 40 / math 25 / lang 20 / code 15. Web is the foundational
+        # English-fluency source; reasoning sources are the specialization layers.
+        BUDGET_WEB  = int(args.budget_mb * 0.40 * 1e6)
+        BUDGET_MATH = int(args.budget_mb * 0.25 * 1e6)
+        BUDGET_LANG = int(args.budget_mb * 0.20 * 1e6)
+        BUDGET_CODE = int(args.budget_mb * 0.15 * 1e6)
         print(f'Total budget:   {args.budget_mb} MB')
-        print(f'  math (30%): {BUDGET_MATH/1e6:.0f} MB')
-        print(f'  lang (40%): {BUDGET_LANG/1e6:.0f} MB')
-        print(f'  code (30%): {BUDGET_CODE/1e6:.0f} MB')
+        print(f'  web  (40%): {BUDGET_WEB/1e6:.0f} MB  (FineWeb-Edu)')
+        print(f'  math (25%): {BUDGET_MATH/1e6:.0f} MB')
+        print(f'  lang (20%): {BUDGET_LANG/1e6:.0f} MB')
+        print(f'  code (15%): {BUDGET_CODE/1e6:.0f} MB')
     print(f'Output dir:     {args.target_dir}')
     print(f'Drive cache:    {args.drive_cache}')
 
     # Per-source char budget. In --unlimited, all are int(1e15) so no source caps out.
     # Within a domain, budgeted weights set rough proportions when bounded.
     SOURCES = [
+        # Web foundation — FIRST so it lands first and provides the English baseline
+        ('fineweb_edu','web',  stream_fineweb_edu,                         BUDGET_WEB),
+        # Math reasoning
         ('numinamath', 'math', stream_numinamath,                          int(BUDGET_MATH * 0.40)),
         ('metamathqa', 'math', stream_metamathqa,                          int(BUDGET_MATH * 0.30)),
         ('r1_math',    'math', lambda: stream_r1_subset('math', 'math'),   int(BUDGET_MATH * 0.30)),
-        # Lang sources: Kimi K2.5 (replaces Sonnet) provides reasoning traces
+        # Lang reasoning + chat (Kimi K2.5 provides long-form thinking traces)
         ('kimi',       'lang', stream_kimi,                                int(BUDGET_LANG * 0.55)),
         ('r1_science', 'lang', lambda: stream_r1_subset('science', 'lang'),int(BUDGET_LANG * 0.30)),
         ('opus',       'lang', lambda: stream_drive_jsonl(
                                   f'{args.drive_cache}/opus_4_6.jsonl',
                                   'Anthropic/opus-4.6-traces',
                                   'lang'),                                 int(BUDGET_LANG * 0.15)),
+        # Code reasoning
         ('r1_code',    'code', lambda: stream_r1_subset('code', 'code'),   BUDGET_CODE),
     ]
 
@@ -474,6 +528,7 @@ def main():
     print('=' * 70)
 
     DOMAINS = {
+        'web':  ['fineweb_edu'],
         'math': ['numinamath', 'metamathqa', 'r1_math'],
         'lang': ['kimi', 'r1_science', 'opus'],
         'code': ['r1_code'],

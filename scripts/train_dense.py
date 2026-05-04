@@ -201,7 +201,11 @@ def main():
     muon_opt, adamw_opt = build_optimizers(model, peak_lr=args.peak_lr)
     optimizers = [o for o in [muon_opt, adamw_opt] if o is not None]
 
-    MIX = {'math': 0.30, 'lang': 0.40, 'code': 0.30}
+    # Domain mix: web foundation 40%, then reasoning specialization 60%
+    # split across math/lang/code. Trainer auto-drops any domain whose
+    # combined .jsonl is missing (with a WARN), so this works even if e.g.
+    # web.jsonl wasn't built for a particular run.
+    MIX = {'web': 0.40, 'math': 0.25, 'lang': 0.20, 'code': 0.15}
     apply_pd = not args.no_per_digit
     stream = make_mixed(args.cache_dir, MIX, tok, args.seq_len,
                         fim_rate=args.fim_rate, apply_pd=apply_pd, rng=rng)
