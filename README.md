@@ -225,7 +225,7 @@ Special tokens (IDs 0-17):
 | Web | FineWeb-Edu sample-10BT (100%) | **40%** |
 | Math | NuminaMath-CoT (40%), MetaMathQA (30%), DeepSeek R1 math (30%) | 25% |
 | Language | Kimi K2.5 (55%), R1 science (30%), Opus 4.6 (15%) | 20% |
-| Code | DeepSeek R1 code subset (100%) | 15% |
+| Code | nvidia/OpenCodeReasoning + fallbacks (100%) | 15% |
 
 Web is the foundational English-fluency source (raw documents, no chat structure). Reasoning sources (60% combined) contribute the thinking-then-answer behavior. Same mix across all training phases.
 

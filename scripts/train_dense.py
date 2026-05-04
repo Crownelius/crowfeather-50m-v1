@@ -178,6 +178,15 @@ def main():
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
     from muon import build_optimizers
 
+    # Validate --resume points to an actual local directory before HF tries
+    # to interpret it as a hub repo-id (which produces a misleading
+    # HFValidationError).
+    if not os.path.isdir(args.resume):
+        print(f'ERROR: --resume directory does not exist: {args.resume}')
+        print(f'  This usually means a prior phase did not produce its final/ output.')
+        print(f'  In the notebook, re-run the earlier phase cell before this one.')
+        sys.exit(2)
+
     from transformers import AutoTokenizer, Qwen3ForCausalLM
     tok = AutoTokenizer.from_pretrained(args.resume, use_fast=True)
     print(f'  Loading from {args.resume}')
@@ -241,7 +250,10 @@ def main():
             inp, tgt = inp.cuda(), tgt.cuda()
             out = model(input_ids=inp, labels=tgt)
             loss = out.loss / args.grad_accum
-            if args.z_loss > 0:
+            # z-loss requires materialized logits. Liger Kernel skips
+            # materialization (out.logits is None) since its fused CE has
+            # built-in numerical stability that obviates an explicit z-loss.
+            if args.z_loss > 0 and out.logits is not None:
                 lse = torch.logsumexp(out.logits.float(), dim=-1).mean()
                 loss = loss + (args.z_loss / args.grad_accum) * lse.pow(2)
             if not torch.isfinite(loss):

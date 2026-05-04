@@ -232,7 +232,7 @@ Same mix across all phases (Phase 2 just operates on longer contexts):
 | Web | FineWeb-Edu sample-10BT (100%) | combined to web.jsonl | **40%** |
 | Math | NuminaMath-CoT (40%), MetaMathQA (30%), R1 math (30%) | combined to math.jsonl | 25% |
 | Language | Kimi K2.5 (55%), R1 science (30%), Opus 4.6 (15%) | combined to lang.jsonl | 20% |
-| Code | R1 code subset (100%) | code.jsonl | 15% |
+| Code | nvidia/OpenCodeReasoning + fallbacks (100%) | code.jsonl | 15% |
 
 The trainer (`train_dense.py`) randomly selects one of these three domain JSONLs per document according to the mix weights. Per-digit wrap is applied to all text before tokenization. FIM permutation is applied after tokenization, per document.
 

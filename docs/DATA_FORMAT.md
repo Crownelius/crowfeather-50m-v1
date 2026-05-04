@@ -84,8 +84,8 @@ The trainer (`train_dense.py`) appends `<|eos|>` between concatenated docs at pa
 | MetaMathQA | `meta-math/MetaMathQA` | math | `qa` | `query` + `response` |
 | R1-math | `open-r1/Mixture-of-Thoughts` (`math`) | math | `chat_with_thinking` | DeepSeek R1 traces; `<think>` always present |
 | R1-science | `open-r1/Mixture-of-Thoughts` (`science`) | lang | `chat_with_thinking` | Same |
-| R1-code | `open-r1/Mixture-of-Thoughts` (`code`) | code | `chat_with_thinking` | Same |
-| Kimi K2.5 | `ianncity/KIMI-K2.5-1000000x` | lang | `chat_with_thinking` / `chat` | Reasoning traces (1M samples). Tries `messages`, then `prompt`/`output` with optional separate `thinking`/`reasoning`/`cot` field, then raw `text`. Splits embedded `<think>...</think>` into our `<\|think\|>...</\|think\|>` tokens. |
+| Code reasoning | `nvidia/OpenCodeReasoning` (primary) → `bigcode/oss-instruct-25k` → `m-a-p/CodeFeedback-Filtered-Instruction` (fallbacks) | code | `chat_with_thinking` / `chat` | Replaces `open-r1/Mixture-of-Thoughts:code` which the dataset publishes with only ~2 records. Adapter tries each source in order; uses the first that yields records. |
+| Kimi K2.5 | `ianncity/KIMI-K2.5-1000000x` (configs: `General-Distillation`, `General-Math`, `PHD-Science`) | lang | `chat_with_thinking` / `chat` | Reasoning traces (~1M samples across 3 English-relevant configs; the 4th config `MultilingualSTEM` is skipped). Yields from each config in turn; `source_dataset` includes the config name for post-hoc balancing. |
 | Opus 4.6 | local Drive JSONL | lang | `chat` / `raw` | User-curated; lives at `{DRIVE_ROOT}/distill_data/opus_4_6.jsonl` |
 
 The R1 adapter (`stream_r1_subset`) is robust to schema drift across the three Mixture-of-Thoughts configs: tries `messages` first, then `prompt`/`completion`, then raw `text`. If a future dataset rev breaks the adapter, `scripts/diagnose_datasets.py` prints the actual schema for quick debugging.
@@ -101,7 +101,7 @@ After per-source download, the precache builds:
 | `web.jsonl` | fineweb_edu (100%) | 40% (~3200 MB) | 40% |
 | `math.jsonl` | numinamath (40%), metamathqa (30%), r1_math (30%) | 25% (~2000 MB) | 25% |
 | `lang.jsonl` | kimi (55%), r1_science (30%), opus (15%) | 20% (~1600 MB) | 20% |
-| `code.jsonl` | r1_code (100%) | 15% (~1200 MB) | 15% |
+| `code.jsonl` | code_reasoning (100%) | 15% (~1200 MB) | 15% |
 
 In `--unlimited` mode, every per-source file is downloaded in full (no truncation); combined files contain everything. The trainer's `make_mixed` reads from the four combined files at the training-time weights above.
 

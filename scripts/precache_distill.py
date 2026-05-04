@@ -254,89 +254,175 @@ def stream_r1_subset(subset: str, domain: str) -> Iterator[dict]:
             )
 
 
-def stream_kimi() -> Iterator[dict]:
-    """ianncity/KIMI-K2.5-1000000x — Kimi K2.5 reasoning traces (replaces Sonnet).
+KIMI_CONFIGS = ['General-Distillation', 'General-Math', 'PHD-Science']
+# Note: 'MultilingualSTEM' config is non-English, skipped for our English-only
+# 50M model. To include it, append to KIMI_CONFIGS.
 
-    K2.5 emits thinking in the assistant content, often with a <think> wrapper or
-    similar marker. The adapter splits these into our <|think|>/</|think|> tokens
-    so the trained model learns the same thinking-then-answering structure.
-    """
-    from datasets import load_dataset
-    try:
-        ds = load_dataset('ianncity/KIMI-K2.5-1000000x', split='train', streaming=True)
-    except Exception as e:
-        print(f'  ERROR loading Kimi K2.5 dataset: {e}')
-        return
-    schema_logged = False
-    src = 'ianncity/KIMI-K2.5-1000000x'
-    for i, r in enumerate(ds):
-        if not schema_logged:
-            _log_schema('kimi', r); schema_logged = True
 
-        # Messages-format first (most likely)
-        msgs = r.get('messages') or r.get('conversation')
-        if msgs and isinstance(msgs, list):
-            user_msg = next((m.get('content', '') for m in msgs if m.get('role') == 'user'), '')
-            asst_msg = next((m.get('content', '') for m in msgs if m.get('role') == 'assistant'), '')
-            sys_msg  = next((m.get('content', '') for m in msgs if m.get('role') == 'system'), '')
-            if user_msg and asst_msg:
-                if sys_msg:
-                    user_msg = f'[System]: {sys_msg}{NL}{NL}{user_msg}'
-                thinking, final = split_thinking(asst_msg)
-                text = chat_format(user_msg, final, thinking)
-                yield make_record(
-                    text=text, source=src, domain='lang',
-                    fmt='chat_with_thinking' if thinking else 'chat',
-                    has_thinking=bool(thinking),
-                    metadata={'idx': i, 'n_messages': len(msgs)},
-                )
-                continue
-
-        # Some Kimi-style dumps emit thinking in a separate field
-        prompt = r.get('prompt') or r.get('input') or r.get('instruction') or r.get('question')
-        output = r.get('output') or r.get('response') or r.get('completion') or r.get('answer')
-        thinking_field = r.get('thinking') or r.get('reasoning') or r.get('cot') or r.get('chain_of_thought')
-        if prompt and output:
-            if thinking_field and isinstance(thinking_field, str) and thinking_field.strip():
-                # Explicit separate thinking field — use it directly
-                text = chat_format(str(prompt), str(output), str(thinking_field))
-                yield make_record(
-                    text=text, source=src, domain='lang',
-                    fmt='chat_with_thinking', has_thinking=True,
-                    metadata={'idx': i, 'fields': list(r.keys()), 'thinking_field': True},
-                )
-                continue
-            # Otherwise try to split <think>...</think> from output
-            thinking, final = split_thinking(str(output))
-            text = chat_format(str(prompt), final, thinking)
-            yield make_record(
+def _emit_kimi_record(r, i, src, NL_):
+    """Emit one unified record from a Kimi row, trying messages -> prompt+output -> raw text."""
+    # Messages-format first (most likely)
+    msgs = r.get('messages') or r.get('conversation')
+    if msgs and isinstance(msgs, list):
+        user_msg = next((m.get('content', '') for m in msgs if m.get('role') == 'user'), '')
+        asst_msg = next((m.get('content', '') for m in msgs if m.get('role') == 'assistant'), '')
+        sys_msg  = next((m.get('content', '') for m in msgs if m.get('role') == 'system'), '')
+        if user_msg and asst_msg:
+            if sys_msg:
+                user_msg = f'[System]: {sys_msg}{NL_}{NL_}{user_msg}'
+            thinking, final = split_thinking(asst_msg)
+            text = chat_format(user_msg, final, thinking)
+            return make_record(
                 text=text, source=src, domain='lang',
                 fmt='chat_with_thinking' if thinking else 'chat',
                 has_thinking=bool(thinking),
-                metadata={'idx': i, 'fields': list(r.keys())},
+                metadata={'idx': i, 'n_messages': len(msgs)},
             )
-            continue
 
-        # Raw text fallback
-        raw = r.get('text') or r.get('content') or r.get('body')
-        if isinstance(raw, list):
-            raw = NL.join(str(t) for t in raw)
-        if raw and isinstance(raw, str) and len(raw) > 100:
-            thinking, final = split_thinking(raw)
-            if thinking:
-                text = chat_format('Continue:', final, thinking)
-                yield make_record(
-                    text=text, source=src, domain='lang',
-                    fmt='chat_with_thinking', has_thinking=True,
-                    metadata={'idx': i, 'fields': list(r.keys())},
-                )
+    # Separate thinking field (some Kimi dumps)
+    prompt = r.get('prompt') or r.get('input') or r.get('instruction') or r.get('question')
+    output = r.get('output') or r.get('response') or r.get('completion') or r.get('answer')
+    thinking_field = r.get('thinking') or r.get('reasoning') or r.get('cot') or r.get('chain_of_thought')
+    if prompt and output:
+        if thinking_field and isinstance(thinking_field, str) and thinking_field.strip():
+            text = chat_format(str(prompt), str(output), str(thinking_field))
+            return make_record(
+                text=text, source=src, domain='lang',
+                fmt='chat_with_thinking', has_thinking=True,
+                metadata={'idx': i, 'thinking_field': True},
+            )
+        thinking, final = split_thinking(str(output))
+        text = chat_format(str(prompt), final, thinking)
+        return make_record(
+            text=text, source=src, domain='lang',
+            fmt='chat_with_thinking' if thinking else 'chat',
+            has_thinking=bool(thinking),
+            metadata={'idx': i},
+        )
+
+    # Raw text fallback
+    raw = r.get('text') or r.get('content') or r.get('body')
+    if isinstance(raw, list):
+        raw = NL_.join(str(t) for t in raw)
+    if raw and isinstance(raw, str) and len(raw) > 100:
+        thinking, final = split_thinking(raw)
+        if thinking:
+            text = chat_format('Continue:', final, thinking)
+            return make_record(
+                text=text, source=src, domain='lang',
+                fmt='chat_with_thinking', has_thinking=True,
+                metadata={'idx': i},
+            )
+        text = assistant_only_format(raw)
+        return make_record(
+            text=text, source=src, domain='lang',
+            fmt='raw', has_thinking=False,
+            metadata={'idx': i},
+        )
+    return None
+
+
+def stream_kimi() -> Iterator[dict]:
+    """ianncity/KIMI-K2.5-1000000x — iterates English-relevant configs.
+
+    Dataset has 4 configs: 'General-Distillation', 'PHD-Science', 'General-Math',
+    'MultilingualSTEM'. We yield from the first three (skip multilingual).
+    Each record's source_dataset includes the config so post-hoc filtering
+    can balance them.
+    """
+    from datasets import load_dataset
+    base_id = 'ianncity/KIMI-K2.5-1000000x'
+    for config in KIMI_CONFIGS:
+        try:
+            ds = load_dataset(base_id, config, split='train', streaming=True)
+        except Exception as e:
+            print(f'  WARN: Kimi config {config!r} failed to load: {e}')
+            continue
+        schema_logged = False
+        src = f'{base_id}:{config}'
+        n = 0
+        for i, r in enumerate(ds):
+            if not schema_logged:
+                _log_schema(f'kimi:{config}', r); schema_logged = True
+            rec = _emit_kimi_record(r, i, src, NL)
+            if rec is not None:
+                yield rec
+                n += 1
+        print(f'  kimi:{config} yielded {n:,} records')
+
+
+def stream_code_reasoning() -> Iterator[dict]:
+    """Code reasoning traces. Replaces the broken open-r1/Mixture-of-Thoughts:code
+    subset (which contains only ~2 records).
+
+    Tries nvidia/OpenCodeReasoning first (high-quality, code+reasoning), falls
+    back to bigcode/oss-instruct-25k if unavailable.
+    """
+    from datasets import load_dataset
+    sources_to_try = [
+        ('nvidia/OpenCodeReasoning', None),
+        ('bigcode/oss-instruct-25k', None),
+        ('m-a-p/CodeFeedback-Filtered-Instruction', None),
+    ]
+    n_yielded = 0
+    for hf_id, config in sources_to_try:
+        try:
+            if config:
+                ds = load_dataset(hf_id, config, split='train', streaming=True)
             else:
-                text = assistant_only_format(raw)
+                ds = load_dataset(hf_id, split='train', streaming=True)
+        except Exception as e:
+            print(f'  WARN: code source {hf_id} unavailable: {e}')
+            continue
+        src = hf_id if not config else f'{hf_id}:{config}'
+        schema_logged = False
+        for i, r in enumerate(ds):
+            if not schema_logged:
+                _log_schema(f'code:{hf_id}', r); schema_logged = True
+
+            # Messages format
+            msgs = r.get('messages') or r.get('conversation')
+            if msgs and isinstance(msgs, list):
+                user_msg = next((m.get('content', '') for m in msgs if m.get('role') == 'user'), '')
+                asst_msg = next((m.get('content', '') for m in msgs if m.get('role') == 'assistant'), '')
+                if user_msg and asst_msg:
+                    thinking, final = split_thinking(asst_msg)
+                    text = chat_format(user_msg, final, thinking)
+                    yield make_record(
+                        text=text, source=src, domain='code',
+                        fmt='chat_with_thinking' if thinking else 'chat',
+                        has_thinking=bool(thinking),
+                        metadata={'idx': i, 'hf_id': hf_id},
+                    )
+                    n_yielded += 1
+                    continue
+
+            # OpenCodeReasoning typically has 'input', 'output' (or 'solution', 'reasoning')
+            prompt = r.get('input') or r.get('prompt') or r.get('instruction') or r.get('question') or r.get('problem')
+            output = r.get('output') or r.get('solution') or r.get('response') or r.get('answer') or r.get('completion')
+            reasoning_field = r.get('reasoning') or r.get('thinking') or r.get('cot')
+            if prompt and output:
+                if reasoning_field and isinstance(reasoning_field, str) and reasoning_field.strip():
+                    text = chat_format(str(prompt), str(output), str(reasoning_field))
+                    fmt = 'chat_with_thinking'; has_th = True
+                else:
+                    thinking, final = split_thinking(str(output))
+                    text = chat_format(str(prompt), final, thinking)
+                    fmt = 'chat_with_thinking' if thinking else 'chat'
+                    has_th = bool(thinking)
                 yield make_record(
-                    text=text, source=src, domain='lang',
-                    fmt='raw', has_thinking=False,
-                    metadata={'idx': i, 'fields': list(r.keys())},
+                    text=text, source=src, domain='code',
+                    fmt=fmt, has_thinking=has_th,
+                    metadata={'idx': i, 'hf_id': hf_id},
                 )
+                n_yielded += 1
+                continue
+        # If we yielded ANYTHING from this source, don't fall through to others
+        if n_yielded > 0:
+            print(f'  code: {hf_id} yielded {n_yielded:,} records; not trying further sources')
+            return
+    if n_yielded == 0:
+        print(f'  WARN: ALL code sources failed; code domain will be empty')
 
 
 def stream_drive_jsonl(path: str, source_label: str, domain: str) -> Iterator[dict]:
@@ -496,8 +582,9 @@ def main():
                                   f'{args.drive_cache}/opus_4_6.jsonl',
                                   'Anthropic/opus-4.6-traces',
                                   'lang'),                                 int(BUDGET_LANG * 0.15)),
-        # Code reasoning
-        ('r1_code',    'code', lambda: stream_r1_subset('code', 'code'),   BUDGET_CODE),
+        # Code reasoning (was open-r1/Mixture-of-Thoughts:code which only has ~2 records;
+        # replaced with nvidia/OpenCodeReasoning + fallbacks).
+        ('code_reasoning', 'code', stream_code_reasoning,                  BUDGET_CODE),
     ]
 
     if args.force_refresh:
@@ -531,7 +618,7 @@ def main():
         'web':  ['fineweb_edu'],
         'math': ['numinamath', 'metamathqa', 'r1_math'],
         'lang': ['kimi', 'r1_science', 'opus'],
-        'code': ['r1_code'],
+        'code': ['code_reasoning'],
     }
     for d, srcs in DOMAINS.items():
         out = os.path.join(args.target_dir, f'{d}.jsonl')

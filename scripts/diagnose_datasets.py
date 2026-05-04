@@ -54,19 +54,24 @@ def main():
     p = argparse.ArgumentParser()
     p.add_argument('--dataset', default='all',
                    choices=['all', 'fineweb_edu', 'numinamath', 'metamathqa',
-                            'r1_math', 'r1_science', 'r1_code', 'r1_default', 'kimi'])
+                            'r1_math', 'r1_science', 'r1_code', 'r1_default',
+                            'kimi', 'opencodereasoning', 'oss_instruct'])
     p.add_argument('--n-samples', type=int, default=2)
     args = p.parse_args()
 
     REGISTRY = {
-        'fineweb_edu': ('HuggingFaceFW/fineweb-edu', 'sample-10BT'),
-        'numinamath':  ('AI-MO/NuminaMath-CoT', None),
-        'metamathqa':  ('meta-math/MetaMathQA', None),
-        'r1_default':  ('open-r1/Mixture-of-Thoughts', 'default'),
-        'r1_math':     ('open-r1/Mixture-of-Thoughts', 'math'),
-        'r1_science':  ('open-r1/Mixture-of-Thoughts', 'science'),
-        'r1_code':     ('open-r1/Mixture-of-Thoughts', 'code'),
-        'kimi':        ('ianncity/KIMI-K2.5-1000000x', None),
+        'fineweb_edu':       ('HuggingFaceFW/fineweb-edu', 'sample-10BT'),
+        'numinamath':        ('AI-MO/NuminaMath-CoT', None),
+        'metamathqa':        ('meta-math/MetaMathQA', None),
+        'r1_default':        ('open-r1/Mixture-of-Thoughts', 'default'),
+        'r1_math':           ('open-r1/Mixture-of-Thoughts', 'math'),
+        'r1_science':        ('open-r1/Mixture-of-Thoughts', 'science'),
+        'r1_code':           ('open-r1/Mixture-of-Thoughts', 'code'),
+        # Kimi has 4 configs; default to General-Distillation
+        'kimi':              ('ianncity/KIMI-K2.5-1000000x', 'General-Distillation'),
+        # Code reasoning replacements for the broken r1_code subset
+        'opencodereasoning': ('nvidia/OpenCodeReasoning', None),
+        'oss_instruct':      ('bigcode/oss-instruct-25k', None),
     }
 
     if args.dataset == 'all':
