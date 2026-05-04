@@ -355,6 +355,28 @@ TOTAL:                                   ~16 GB on 80GB GPU
 
 Still very comfortable on 80GB. On 40GB, we would drop to B=1 with accum=4 for the same effective batch.
 
+### Empirical measurement (limit-test 2026-05-04)
+
+The theoretical projections above turned out to be **substantial overestimates**. Direct measurement on A100-SXM4-40GB with our actual config (model + Muon+AdamW + grad ckpt + Liger Kernel + Flash Attention 2):
+
+```
+Phase 1 (B=2 T=4K   accum=4):  peak  0.85 GB
+Phase 2 (B=1 T=16K  accum=4):  peak  1.00 GB
+Phase 3 (B=2 T=4K   accum=4):  peak  0.74 GB
+Stress  (B=2 T=16K  accum=2):  peak  1.54 GB
+```
+
+That's 12-16x lower than the projection. Why:
+
+1. **HF gradient checkpointing is more aggressive than I modeled.** It checkpoints every transformer block, so only block-input activations persist (B*T*hidden*2 bytes per layer). At B=2 T=4K: 12 layers × 7.3 MB = 88 MB of saved activations, not the multi-GB I estimated. Recomputed activations during backward are transient.
+2. **Flash Attention 2 makes attention O(T) memory, not O(T²).** At T=16K with FA2, attention activations are roughly the same fraction of memory as at T=4K, just scaled by 4x for sequence length. Without FA2 the 16K test would have been catastrophic.
+3. **Liger fused CE replaces the B*T*V logits tensor.** At V=32K, B=4, T=4K that's 1 GB of avoided logit memory.
+4. **bf16 on every persistent tensor (model + grads + activation savepoints).** Half the bytes of fp32.
+
+The practical implication: the entire Crowfeather-50M-v1 pipeline runs in <2 GB of VRAM at the test configuration. We have ~38 GB of unused headroom on a 40GB A100, which justifies bumping batch sizes (Phase 1/3 from B=2 to B=4, Phase 2 from B=1 to B=2) without touching effective batch — done in commit after limit-test.
+
+**The 412M-3E sibling's higher VRAM projections (16-21 GB at Phase 1) are realistic for that scale** — its 768 hidden × 24 layers × 262K vocab puts it firmly in the activation-bound regime even with the same memory tricks. The 50M model is small enough that grad ckpt + FA2 + Liger reduce it to a memory-cheap pipeline.
+
 ---
 
 ## 9. Token budget

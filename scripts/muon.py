@@ -50,13 +50,19 @@ class Muon(torch.optim.Optimizer):
                 update = update * (max(p.shape) ** 0.5) * gamma
                 if wd > 0: p.mul_(1.0 - lr * wd)
                 p.add_(update.to(p.dtype), alpha=-lr)
-                if state.get('check_sv_step', 0) % 1000 == 0:
-                    try:
-                        sv_min = torch.linalg.svdvals(p.float())[-1].item()
-                        if sv_min < 0.01:
-                            print(f'  [Muon WARN] min_sv={sv_min:.5f} on {tuple(p.shape)} -- rank loss')
-                    except Exception: pass
                 state['check_sv_step'] = state.get('check_sv_step', 0) + 1
+                # Check spectrum every 1000 steps (skip step 0: random init has min/max ~ 1/sqrt(N)
+                # for square N x N matrices, which would trigger false alarms on every restart).
+                # Use a relative threshold so the warning fires only on genuine rank degeneration.
+                if state['check_sv_step'] % 1000 == 0:
+                    try:
+                        sv = torch.linalg.svdvals(p.float())
+                        sv_max, sv_min = sv[0].item(), sv[-1].item()
+                        if sv_max > 0 and sv_min / sv_max < 1e-4:
+                            print(f'  [Muon WARN] cond_recip={sv_min/sv_max:.2e} '
+                                  f'(min_sv={sv_min:.5f}, max_sv={sv_max:.3f}) '
+                                  f'on {tuple(p.shape)} -- rank loss')
+                    except Exception: pass
         return loss
 
 

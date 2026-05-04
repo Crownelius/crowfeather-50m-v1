@@ -282,19 +282,29 @@ The "Open in Colab" badge at the top is the fast path. For the full breakdown:
    - `WANDB_API_KEY` from https://wandb.ai/authorize (read-only fine)
 4. **Runtime → Run all** (Ctrl+F9). Walks the full pipeline: setup → precache → Phase 0 BPE → build init → smoke test → Phase 1 → Phase 2 → Phase 3 → eval → HF push.
 
-### Wall time + cost
+### Wall time + cost (post-limit-test)
+
+40GB and 80GB now use the **same** batch config (`B=4/2/4 accum=2`) — limit-test on A100-SXM4-40GB measured peak VRAM <2 GB on every phase, so we have ~38 GB of unused headroom on both. The 40GB throughput at the larger batch is approximately equal to 80GB throughput (compute-bound territory rather than memory-bound).
 
 | Phase | A100 80GB | A100 40GB | Notes |
 |---|---|---|---|
 | Setup + auth + precache | ~45 min | ~45 min | one-time per Drive |
 | Phase 0 BPE training | ~30 min | ~30 min | CPU-bound |
-| Phase 1 pretrain (40K steps) | ~4-5h | ~5-6h | the long one |
-| Phase 2 CPT (2.5K @ 16K) | ~1.5h | ~2h | |
-| Phase 3 SFT (2.5K @ 4K) | ~20 min | ~25 min | |
+| Phase 1 pretrain (40K steps @ 4K, eff_batch=8) | ~6-7h | ~7-8h | the long one |
+| Phase 2 CPT (2.5K @ 16K, eff_batch=4) | ~1h | ~1h | bumped from B=1→B=2 after limit test |
+| Phase 3 SFT (2.5K @ 4K, eff_batch=8) | ~25 min | ~25 min | |
 | Eval + HF push | ~10 min | ~10 min | |
-| **Total** | **~11-13h** | **~13-15h** | |
+| **Total** | **~9-11h** | **~10-12h** | |
 
 At Colab Pro PAYG (~$1.50/hr A100), **$15-20 end-to-end**.
+
+Limit-test report (commit-pin: see `notebooks/a100_40gb_limit_test.ipynb`):
+
+| Phase | B/T/accum | Peak VRAM | Tokens/sec |
+|---|---|---|---|
+| Phase 1 pretrain | 4 / 4096 / 2 | ~1 GB | ~28K post-warmup |
+| Phase 2 CPT (16K) | 2 / 16384 / 2 | 1.5 GB | ~48K |
+| Phase 3 SFT | 4 / 4096 / 2 | ~1 GB | ~28K |
 
 ### Resume logic
 

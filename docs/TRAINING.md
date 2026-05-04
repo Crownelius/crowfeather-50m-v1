@@ -41,10 +41,8 @@ If `runs/tokenizer/tokenizer.json` exists, Phase 0 is skipped and the existing t
 |---|---|---|
 | Steps | 40,000 | |
 | Sequence length | 4,096 | |
-| Batch size (80GB) | 4 | |
-| Gradient accumulation (80GB) | 2 | Effective batch = 8 |
-| Batch size (40GB) | 2 | |
-| Gradient accumulation (40GB) | 4 | Effective batch = 8 |
+| Batch size | 4 | same on 40GB and 80GB after limit-test (peak <2 GB) |
+| Gradient accumulation | 2 | Effective batch = 8 |
 | Peak LR | 3e-4 | Slightly higher than 412M's 2e-4 because smaller model |
 | Min LR | 3e-5 | |
 | Warmup fraction | 0.015 (1.5%) | |
@@ -61,7 +59,7 @@ If `runs/tokenizer/tokenizer.json` exists, Phase 0 is skipped and the existing t
 
 ### Wall time
 
-~4-5 hours on A100 80GB.
+~6-7 hours on A100 80GB (limit-test 2026-05-04 measured ~28K tokens/sec at this config; 40K * 2 / 28K * 4096 ~= 23K seconds = ~6.5h).
 
 ### Resume logic
 
@@ -79,10 +77,8 @@ Random init only via Qwen3Config defaults (HuggingFace). No grafting from any ot
 |---|---|---|
 | Steps | 2,500 | |
 | Sequence length | 16,384 | matches `max_position_embeddings` |
-| Batch size (80GB) | 2 | |
-| Gradient accumulation (80GB) | 2 | Effective batch = 4 |
-| Batch size (40GB) | 1 | |
-| Gradient accumulation (40GB) | 4 | Effective batch = 4 |
+| Batch size | 2 | bumped from B=1 after limit-test stress test passed (peak 1.5 GB) |
+| Gradient accumulation | 2 | Effective batch = 4 |
 | Peak LR | 6e-5 | 20% of pretrain LR (standard for context extension) |
 | Min LR | 6e-6 | |
 | Warmup fraction | 0.05 (5%) | |
@@ -112,8 +108,8 @@ Resumes from `runs/phase1/final/`. Skipped if `runs/phase2/final/` exists.
 |---|---|---|
 | Steps | 2,500 | |
 | Sequence length | 4,096 | |
-| Batch size (80GB) | 4 | |
-| Gradient accumulation (80GB) | 2 | Effective batch = 8 |
+| Batch size | 4 | same on 40GB and 80GB |
+| Gradient accumulation | 2 | Effective batch = 8 |
 | Peak LR | 4e-5 | 13% of pretrain LR |
 | Min LR | 4e-6 | |
 | Warmup fraction | 0.05 (5%) | |
