@@ -140,33 +140,71 @@ experiments/sparrow_1m/
 
 ## Quick start
 
+**Setup (one-time):**
+
 ```bash
-# 1. Generate iteration-1 data: 2-digit addition
+pip install --upgrade transformers torch requests
+```
+
+For the 1B baseline, you have two options:
+
+**Option A — OpenRouter (recommended).** No local download, free tier exists.
+
+```powershell
+# 1. Sign up at https://openrouter.ai/keys, copy your API key
+# 2. Add $1 minimum credit to enable :free models (or pay-as-you-go for paid)
+$env:OPENROUTER_API_KEY = "sk-or-v1-..."        # PowerShell
+# or  export OPENROUTER_API_KEY=sk-or-v1-...    # bash
+```
+
+**Option B — Local HF.** Downloads ~2.5 GB on first run, no API needed.
+
+`meta-llama/Llama-3.2-1B-Instruct` is gated; either accept the license at huggingface.co or use `HuggingFaceTB/SmolLM2-1.35B-Instruct` (open license, similar size).
+
+**Iteration 1 — 2-digit addition:**
+
+```bash
+# 1. Generate 200K problems (~20 sec)
 python experiments/sparrow_1m/gen_arith.py \
-    --out E:/sparrow/iter1_2digit_add.txt \
+    --out E:/sparrow/iter1/data.txt \
     --n 200000 --digits 2 --ops +
 
-# 2. Build the 1M model from scratch
+# 2. Build the 1M init (~1 sec)
 python experiments/sparrow_1m/build_init.py \
     --output-dir E:/sparrow/iter1/init
 
-# 3. Train (auto-detects CUDA / falls back to CPU)
+# 3. Train (5-15 min on GPU, ~1-2 hours on CPU)
 python experiments/sparrow_1m/train_local.py \
     --resume   E:/sparrow/iter1/init \
     --output   E:/sparrow/iter1/trained \
-    --data     E:/sparrow/iter1_2digit_add.txt \
-    --steps    5000 \
-    --batch-size 64 \
-    --seq-len  128 \
-    --peak-lr  3e-3 \
-    --min-lr   3e-4
+    --data     E:/sparrow/iter1/data.txt \
+    --steps    5000 --batch-size 64 --seq-len 128 \
+    --peak-lr  3e-3 --min-lr 3e-4
 
-# 4. Eval vs Llama-3.2-1B-Instruct (downloads Llama on first run)
+# 4a. Eval via OpenRouter (auto-detected if OPENROUTER_API_KEY is set)
+#     Free tier: rps=1.5 (default 3.0 may rate-limit on free)
 python experiments/sparrow_1m/eval_vs_1b.py \
-    --sparrow  E:/sparrow/iter1/trained \
-    --baseline meta-llama/Llama-3.2-1B-Instruct \
+    --sparrow  E:/sparrow/iter1/trained/final \
+    --baseline meta-llama/llama-3.2-1b-instruct:free \
+    --rps 1.5 \
+    --task add --digits 2 --n 200       # smaller n for free tier; bump for paid
+
+# 4b. (Alternative) Eval via local HF
+python experiments/sparrow_1m/eval_vs_1b.py \
+    --sparrow  E:/sparrow/iter1/trained/final \
+    --baseline HuggingFaceTB/SmolLM2-1.35B-Instruct \
+    --baseline-provider local \
     --task add --digits 2 --n 1000
 ```
+
+**Cost / time at iteration 1:**
+
+| Mode | n_problems | Wall time | Cost |
+|---|---|---|---|
+| OpenRouter `:free` (rps=1.5) | 200 | ~3 min | $0 |
+| OpenRouter paid (rps=10) | 1000 | ~3 min | ~$0.03 |
+| Local HF (RTX 3060) | 1000 | ~5 min | $0 (after one-time download) |
+| Local HF (CPU) | 1000 | ~30 min | $0 |
 
 ---
 
