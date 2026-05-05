@@ -75,7 +75,7 @@ def build_test_set(task: str, digits: int, n: int, seed: int = 12345):
     if task == 'algebra':
         from gen_arith import gen_algebra
         for _ in range(n):
-            line = gen_algebra(rng).rstrip('\n')
+            line = gen_algebra(rng, digits).rstrip('\n')
             # Format: "a x ± b = c x = solution"
             # Split at the LAST " x = " to separate equation from answer
             eq_part, answer = line.rsplit(' x = ', 1)
@@ -163,7 +163,7 @@ def build_few_shot_prompt(prompt: str, k: int, digits: int, op: str, seed: int =
     elif op == 'algebra':
         from gen_arith import gen_algebra
         for _ in range(k):
-            examples.append(gen_algebra(rng).rstrip('\n'))
+            examples.append(gen_algebra(rng, digits).rstrip('\n'))
     else:
         for _ in range(k):
             examples.append(gen_problem(digits, op, rng).rstrip('\n'))

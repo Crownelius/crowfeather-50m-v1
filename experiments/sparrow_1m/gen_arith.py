@@ -58,32 +58,55 @@ def gen_problem(digits: int, op: str, rng: random.Random) -> str:
     return f'{per_digit(a)} {op} {per_digit(b)} = {per_digit(result)}\n'
 
 
-def gen_algebra(rng: random.Random) -> str:
+def gen_algebra(rng: random.Random, digits: int = 1) -> str:
     """Generate one linear 1-variable algebra problem.
 
     Format: "a x + b = c x = solution\\n"
-        (or "a x - b = c x = solution\\n" if b is negative in source)
 
-    Where the equation is "a*x + b = c" and the model must output "x = solution".
-    Coefficient `a` is 1-9 (positive single digit), constant `b` is -9..9,
-    solution `x` is -9..9 (excluding 0 to avoid trivial cases).
-    `c` is computed as `a*x + b` and emitted per-digit.
+    `digits` controls the magnitude of a, b, and x (the solution). c = a*x + b
+    is emitted per-digit; a and b are also per-digit when multi-digit (so the
+    model sees the same per-digit format end-to-end).
 
-    Examples:
+    digits=1: a in [1,9],   b in [-9,9],   x in [-9,9]\\{0}
+    digits=2: a in [10,99], b in [-99,99], x in [-99,99]\\{0}
+    digits=3: a in [100,999], b in [-999,999], x in [-99,99]\\{0}  (kept x small to bound c)
+
+    For digits >= 2, a and b are emitted per-digit too: "1 5 x + 2 3 = ...".
+
+    Examples (digits=1):
         "3 x + 4 = 1 0 x = 2"     (3*2 + 4 = 10)
-        "2 x + 1 = - 9 x = - 5"   (2*-5 + 1 = -9)
-        "1 x - 2 = 1 x = 3"       (1*3 - 2 = 1)
+        "2 x + 1 = - 9 x = - 5"
+    Examples (digits=2):
+        "1 5 x + 2 3 = 1 7 3 x = 1 0"     (15*10 + 23 = 173)
     """
-    x = rng.randint(-9, 9)
-    while x == 0:
-        x = rng.randint(-9, 9)
-    a = rng.randint(1, 9)
-    b = rng.randint(-9, 9)
-    c = a * x + b
-    if b >= 0:
-        eq = f'{a} x + {b} = {per_digit(c)}'
+    if digits == 1:
+        x_lo, x_hi = -9, 9
+        a_lo, a_hi = 1, 9
+        b_lo, b_hi = -9, 9
+    elif digits == 2:
+        x_lo, x_hi = -99, 99
+        a_lo, a_hi = 10, 99
+        b_lo, b_hi = -99, 99
+    elif digits == 3:
+        # Cap x to [-99, 99] to keep c bounded; a in [100, 999]
+        x_lo, x_hi = -99, 99
+        a_lo, a_hi = 100, 999
+        b_lo, b_hi = -999, 999
     else:
-        eq = f'{a} x - {-b} = {per_digit(c)}'
+        raise ValueError(f'algebra: unsupported digits={digits} (try 1, 2, or 3)')
+
+    x = rng.randint(x_lo, x_hi)
+    while x == 0:
+        x = rng.randint(x_lo, x_hi)
+    a = rng.randint(a_lo, a_hi)
+    b = rng.randint(b_lo, b_hi)
+    c = a * x + b
+
+    a_str = per_digit(a)
+    if b >= 0:
+        eq = f'{a_str} x + {per_digit(b)} = {per_digit(c)}'
+    else:
+        eq = f'{a_str} x - {per_digit(-b)} = {per_digit(c)}'
     return f'{eq} x = {per_digit(x)}\n'
 
 
@@ -152,6 +175,8 @@ def main():
 
     if not args.algebra and (args.digits is None) == (args.max_digits is None):
         p.error('exactly one of --digits or --max-digits must be set (or use --algebra)')
+    if args.algebra and args.digits is None:
+        args.digits = 1  # default for algebra mode
 
     rng = random.Random(args.seed)
     os.makedirs(os.path.dirname(os.path.abspath(args.out)), exist_ok=True)
@@ -159,7 +184,7 @@ def main():
     problems = []
     for _ in range(args.n):
         if args.algebra:
-            problems.append(gen_algebra(rng))
+            problems.append(gen_algebra(rng, args.digits))
             continue
         d = args.digits if args.digits else rng.randint(1, args.max_digits)
         if args.mixed:
