@@ -192,6 +192,46 @@ def gen_polymul(rng: random.Random, digits: int = 1) -> str:
     return f'{prompt} = {answer}\n'
 
 
+def gen_factor(rng: random.Random, digits: int = 1) -> str:
+    """Quadratic factoring: x^2 + p x + q = (x + a)(x + b) where a+b=p, a*b=q.
+
+    Reverse of gen_polymul. Tests whether the model can SEARCH for factors.
+    For uniqueness of target output, the factors are canonicalized so a <= b.
+
+    Skip p=0 cases (i.e. b == -a, factoring as (x+a)(x-a) = x^2 - a^2 with no x term).
+    """
+    if digits == 1:
+        lo, hi = -9, 9
+    else:
+        raise ValueError(f'factor: unsupported digits={digits}')
+
+    while True:
+        a = rng.randint(lo, hi)
+        while a == 0:
+            a = rng.randint(lo, hi)
+        b = rng.randint(lo, hi)
+        while b == 0:
+            b = rng.randint(lo, hi)
+        if a + b != 0:
+            break
+
+    # Canonicalize: a <= b for deterministic target
+    if a > b:
+        a, b = b, a
+
+    p = a + b
+    q = a * b
+
+    p_sign = '+' if p >= 0 else '-'
+    q_sign = '+' if q >= 0 else '-'
+    a_sign = '+' if a >= 0 else '-'
+    b_sign = '+' if b >= 0 else '-'
+
+    prompt = f'x ^ 2 {p_sign} {per_digit(abs(p))} x {q_sign} {per_digit(abs(q))}'
+    answer = f'( x {a_sign} {per_digit(abs(a))} ) ( x {b_sign} {per_digit(abs(b))} )'
+    return f'{prompt} = {answer}\n'
+
+
 def gen_mixed(digits: int, ops_list: list, n_ops: int, rng: random.Random) -> str:
     """Generate one left-to-right mixed expression.
 
@@ -254,12 +294,14 @@ def main():
                    help='generate distributive expansion: a ( x + b ) = a x + ab')
     p.add_argument('--polymul', action='store_true',
                    help='polynomial multiplication: ( x + a ) ( x + b ) = x^2 + (a+b)x + ab')
+    p.add_argument('--factor', action='store_true',
+                   help='quadratic factoring: x^2 + p x + q = ( x + a ) ( x + b )')
     p.add_argument('--seed', type=int, default=20260504)
     p.add_argument('--shuffle', action='store_true', default=True,
                    help='shuffle problems before writing (default on)')
     args = p.parse_args()
 
-    SYMBOLIC_MODE = args.algebra or args.distribute or args.polymul
+    SYMBOLIC_MODE = args.algebra or args.distribute or args.polymul or args.factor
     if not SYMBOLIC_MODE and (args.digits is None) == (args.max_digits is None):
         p.error('exactly one of --digits or --max-digits must be set (or use --algebra/--distribute/--polymul)')
     if SYMBOLIC_MODE and args.digits is None:
@@ -278,6 +320,9 @@ def main():
             continue
         if args.polymul:
             problems.append(gen_polymul(rng, args.digits))
+            continue
+        if args.factor:
+            problems.append(gen_factor(rng, args.digits))
             continue
         d = args.digits if args.digits else rng.randint(1, args.max_digits)
         if args.mixed:
