@@ -110,6 +110,44 @@ def gen_algebra(rng: random.Random, digits: int = 1) -> str:
     return f'{eq} x = {per_digit(x)}\n'
 
 
+def gen_distribute(rng: random.Random, digits: int = 1) -> str:
+    """Generate one distributive expansion problem.
+
+    Format: "a ( x + b ) = a x + ab\\n"  (or with - for negative b/ab)
+
+    The model must (1) copy `a` to the RHS coefficient and (2) compute a*b
+    as the constant. Both signs handled per-digit.
+
+    digits=1: a, b in [-9, 9]\\{0 for a}
+    digits=2: a, b in [-99, 99]\\{0 for a}
+    """
+    if digits == 1:
+        lo, hi = -9, 9
+    elif digits == 2:
+        lo, hi = -99, 99
+    else:
+        raise ValueError(f'distribute: unsupported digits={digits} (try 1 or 2)')
+
+    a = rng.randint(lo, hi)
+    while a == 0:
+        a = rng.randint(lo, hi)
+    b = rng.randint(lo, hi)
+    ab = a * b
+
+    a_str = per_digit(a)
+    if b >= 0:
+        prompt = f'{a_str} ( x + {per_digit(b)} )'
+    else:
+        prompt = f'{a_str} ( x - {per_digit(-b)} )'
+
+    if ab >= 0:
+        answer = f'{a_str} x + {per_digit(ab)}'
+    else:
+        answer = f'{a_str} x - {per_digit(-ab)}'
+
+    return f'{prompt} = {answer}\n'
+
+
 def gen_mixed(digits: int, ops_list: list, n_ops: int, rng: random.Random) -> str:
     """Generate one left-to-right mixed expression.
 
@@ -168,15 +206,17 @@ def main():
                    help='number of operations per mixed expression (default 3 -> 4 operands)')
     p.add_argument('--algebra', action='store_true',
                    help='generate linear 1-variable algebra problems: a x + b = c -> x = solution')
+    p.add_argument('--distribute', action='store_true',
+                   help='generate distributive expansion: a ( x + b ) = a x + ab')
     p.add_argument('--seed', type=int, default=20260504)
     p.add_argument('--shuffle', action='store_true', default=True,
                    help='shuffle problems before writing (default on)')
     args = p.parse_args()
 
-    if not args.algebra and (args.digits is None) == (args.max_digits is None):
-        p.error('exactly one of --digits or --max-digits must be set (or use --algebra)')
-    if args.algebra and args.digits is None:
-        args.digits = 1  # default for algebra mode
+    if not args.algebra and not args.distribute and (args.digits is None) == (args.max_digits is None):
+        p.error('exactly one of --digits or --max-digits must be set (or use --algebra/--distribute)')
+    if (args.algebra or args.distribute) and args.digits is None:
+        args.digits = 1
 
     rng = random.Random(args.seed)
     os.makedirs(os.path.dirname(os.path.abspath(args.out)), exist_ok=True)
@@ -185,6 +225,9 @@ def main():
     for _ in range(args.n):
         if args.algebra:
             problems.append(gen_algebra(rng, args.digits))
+            continue
+        if args.distribute:
+            problems.append(gen_distribute(rng, args.digits))
             continue
         d = args.digits if args.digits else rng.randint(1, args.max_digits)
         if args.mixed:
