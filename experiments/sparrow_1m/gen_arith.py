@@ -58,6 +58,35 @@ def gen_problem(digits: int, op: str, rng: random.Random) -> str:
     return f'{per_digit(a)} {op} {per_digit(b)} = {per_digit(result)}\n'
 
 
+def gen_algebra(rng: random.Random) -> str:
+    """Generate one linear 1-variable algebra problem.
+
+    Format: "a x + b = c x = solution\\n"
+        (or "a x - b = c x = solution\\n" if b is negative in source)
+
+    Where the equation is "a*x + b = c" and the model must output "x = solution".
+    Coefficient `a` is 1-9 (positive single digit), constant `b` is -9..9,
+    solution `x` is -9..9 (excluding 0 to avoid trivial cases).
+    `c` is computed as `a*x + b` and emitted per-digit.
+
+    Examples:
+        "3 x + 4 = 1 0 x = 2"     (3*2 + 4 = 10)
+        "2 x + 1 = - 9 x = - 5"   (2*-5 + 1 = -9)
+        "1 x - 2 = 1 x = 3"       (1*3 - 2 = 1)
+    """
+    x = rng.randint(-9, 9)
+    while x == 0:
+        x = rng.randint(-9, 9)
+    a = rng.randint(1, 9)
+    b = rng.randint(-9, 9)
+    c = a * x + b
+    if b >= 0:
+        eq = f'{a} x + {b} = {per_digit(c)}'
+    else:
+        eq = f'{a} x - {-b} = {per_digit(c)}'
+    return f'{eq} x = {per_digit(x)}\n'
+
+
 def gen_mixed(digits: int, ops_list: list, n_ops: int, rng: random.Random) -> str:
     """Generate one left-to-right mixed expression.
 
@@ -114,19 +143,24 @@ def main():
                    help='generate mixed left-to-right expressions (a op1 b op2 c op3 d = result)')
     p.add_argument('--n-ops', type=int, default=3,
                    help='number of operations per mixed expression (default 3 -> 4 operands)')
+    p.add_argument('--algebra', action='store_true',
+                   help='generate linear 1-variable algebra problems: a x + b = c -> x = solution')
     p.add_argument('--seed', type=int, default=20260504)
     p.add_argument('--shuffle', action='store_true', default=True,
                    help='shuffle problems before writing (default on)')
     args = p.parse_args()
 
-    if (args.digits is None) == (args.max_digits is None):
-        p.error('exactly one of --digits or --max-digits must be set')
+    if not args.algebra and (args.digits is None) == (args.max_digits is None):
+        p.error('exactly one of --digits or --max-digits must be set (or use --algebra)')
 
     rng = random.Random(args.seed)
     os.makedirs(os.path.dirname(os.path.abspath(args.out)), exist_ok=True)
 
     problems = []
     for _ in range(args.n):
+        if args.algebra:
+            problems.append(gen_algebra(rng))
+            continue
         d = args.digits if args.digits else rng.randint(1, args.max_digits)
         if args.mixed:
             problems.append(gen_mixed(d, args.ops, args.n_ops, rng))
