@@ -148,6 +148,50 @@ def gen_distribute(rng: random.Random, digits: int = 1) -> str:
     return f'{prompt} = {answer}\n'
 
 
+def gen_polymul(rng: random.Random, digits: int = 1) -> str:
+    """Polynomial multiplication: (x + a)(x + b) = x^2 + (a+b)x + ab.
+
+    Two simultaneous computations: sum (coefficient of x) and product (constant
+    term). Introduces 'x ^ 2' token sequence.
+
+    digits=1: a, b in [-9, 9]\\{0}.  s = a+b can be -18..18. p = a*b can be -81..81.
+    digits=2: a, b in [-99, 99]\\{0}.
+
+    Skip problems where s == 0 (i.e., b == -a) to keep format uniform —
+    no special-case "x^2 + 0 x + p".
+
+    Example: "( x + 3 ) ( x - 5 ) = x ^ 2 - 2 x - 1 5"   (3 + (-5) = -2, 3 * -5 = -15)
+    """
+    if digits == 1:
+        lo, hi = -9, 9
+    elif digits == 2:
+        lo, hi = -99, 99
+    else:
+        raise ValueError(f'polymul: unsupported digits={digits} (try 1 or 2)')
+
+    while True:
+        a = rng.randint(lo, hi)
+        while a == 0:
+            a = rng.randint(lo, hi)
+        b = rng.randint(lo, hi)
+        while b == 0:
+            b = rng.randint(lo, hi)
+        s = a + b
+        if s != 0:
+            break  # avoid the s=0 edge case
+
+    p = a * b
+
+    a_sign = '+' if a >= 0 else '-'
+    b_sign = '+' if b >= 0 else '-'
+    s_sign = '+' if s >= 0 else '-'
+    p_sign = '+' if p >= 0 else '-'
+
+    prompt = f'( x {a_sign} {per_digit(abs(a))} ) ( x {b_sign} {per_digit(abs(b))} )'
+    answer = f'x ^ 2 {s_sign} {per_digit(abs(s))} x {p_sign} {per_digit(abs(p))}'
+    return f'{prompt} = {answer}\n'
+
+
 def gen_mixed(digits: int, ops_list: list, n_ops: int, rng: random.Random) -> str:
     """Generate one left-to-right mixed expression.
 
@@ -208,14 +252,17 @@ def main():
                    help='generate linear 1-variable algebra problems: a x + b = c -> x = solution')
     p.add_argument('--distribute', action='store_true',
                    help='generate distributive expansion: a ( x + b ) = a x + ab')
+    p.add_argument('--polymul', action='store_true',
+                   help='polynomial multiplication: ( x + a ) ( x + b ) = x^2 + (a+b)x + ab')
     p.add_argument('--seed', type=int, default=20260504)
     p.add_argument('--shuffle', action='store_true', default=True,
                    help='shuffle problems before writing (default on)')
     args = p.parse_args()
 
-    if not args.algebra and not args.distribute and (args.digits is None) == (args.max_digits is None):
-        p.error('exactly one of --digits or --max-digits must be set (or use --algebra/--distribute)')
-    if (args.algebra or args.distribute) and args.digits is None:
+    SYMBOLIC_MODE = args.algebra or args.distribute or args.polymul
+    if not SYMBOLIC_MODE and (args.digits is None) == (args.max_digits is None):
+        p.error('exactly one of --digits or --max-digits must be set (or use --algebra/--distribute/--polymul)')
+    if SYMBOLIC_MODE and args.digits is None:
         args.digits = 1
 
     rng = random.Random(args.seed)
@@ -228,6 +275,9 @@ def main():
             continue
         if args.distribute:
             problems.append(gen_distribute(rng, args.digits))
+            continue
+        if args.polymul:
+            problems.append(gen_polymul(rng, args.digits))
             continue
         d = args.digits if args.digits else rng.randint(1, args.max_digits)
         if args.mixed:

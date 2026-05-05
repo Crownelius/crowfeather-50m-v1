@@ -86,8 +86,14 @@ def build_test_set(task: str, digits: int, n: int, seed: int = 12345):
         from gen_arith import gen_distribute
         for _ in range(n):
             line = gen_distribute(rng, digits).rstrip('\n')
-            # Format: "a ( x ± b ) = a x ± ab"
-            # Split at " = " (only one occurrence)
+            eq_part, answer = line.split(' = ')
+            prompt = eq_part + ' = '
+            problems.append((prompt, answer, line))
+        return problems
+    if task == 'polymul':
+        from gen_arith import gen_polymul
+        for _ in range(n):
+            line = gen_polymul(rng, digits).rstrip('\n')
             eq_part, answer = line.split(' = ')
             prompt = eq_part + ' = '
             problems.append((prompt, answer, line))
@@ -178,6 +184,10 @@ def build_few_shot_prompt(prompt: str, k: int, digits: int, op: str, seed: int =
         from gen_arith import gen_distribute
         for _ in range(k):
             examples.append(gen_distribute(rng, digits).rstrip('\n'))
+    elif op == 'polymul':
+        from gen_arith import gen_polymul
+        for _ in range(k):
+            examples.append(gen_polymul(rng, digits).rstrip('\n'))
     else:
         for _ in range(k):
             examples.append(gen_problem(digits, op, rng).rstrip('\n'))
@@ -406,7 +416,7 @@ def main():
     p.add_argument('--rps', type=float, default=3.0,
                    help='OpenRouter rate limit (requests/sec). Free tier: keep <=3. '
                         'Paid: bump to 10+.')
-    p.add_argument('--task', default='add', choices=['add', 'sub', 'mul', 'div', 'mixed', 'algebra', 'distribute'])
+    p.add_argument('--task', default='add', choices=['add', 'sub', 'mul', 'div', 'mixed', 'algebra', 'distribute', 'polymul'])
     p.add_argument('--digits', type=int, default=2)
     p.add_argument('--n', type=int, default=1000, help='test problems')
     p.add_argument('--k-shots', type=int, default=5, help='few-shot examples for baseline')
@@ -424,7 +434,7 @@ def main():
     print(f'  device: {device}')
     print(f'  task: {args.task} ({args.digits}-digit)  n={args.n}')
 
-    op = {'add': '+', 'sub': '-', 'mul': '*', 'div': '/', 'mixed': 'mixed', 'algebra': 'algebra', 'distribute': 'distribute'}[args.task]
+    op = {'add': '+', 'sub': '-', 'mul': '*', 'div': '/', 'mixed': 'mixed', 'algebra': 'algebra', 'distribute': 'distribute', 'polymul': 'polymul'}[args.task]
     problems = build_test_set(args.task, args.digits, args.n)
 
     print('\n=== Sparrow-1M eval ===')
