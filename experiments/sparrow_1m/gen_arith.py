@@ -58,6 +58,46 @@ def gen_problem(digits: int, op: str, rng: random.Random) -> str:
     return f'{per_digit(a)} {op} {per_digit(b)} = {per_digit(result)}\n'
 
 
+def gen_mixed(digits: int, ops_list: list, n_ops: int, rng: random.Random) -> str:
+    """Generate one left-to-right mixed expression.
+
+    Format: 'a op b op c op d = result' where the expression is evaluated
+    LEFT-TO-RIGHT, ignoring standard operator precedence (this keeps the
+    model's learning target simple — it doesn't need to learn order-of-ops).
+
+    Division is skipped in mixed mode (it requires divisibility constraints
+    that compose poorly with chained ops). Iter 8 covers division separately.
+    """
+    if '/' in ops_list:
+        ops_list = [o for o in ops_list if o != '/']
+    if not ops_list:
+        raise ValueError('mixed mode needs at least one of +, -, *')
+
+    lo = 10 ** (digits - 1) if digits > 1 else 0
+    hi = 10 ** digits - 1
+    operands = [rng.randint(lo, hi) for _ in range(n_ops + 1)]
+    chosen_ops = [rng.choice(ops_list) for _ in range(n_ops)]
+
+    # Left-to-right evaluation
+    result = operands[0]
+    for op, b in zip(chosen_ops, operands[1:]):
+        if op == '+':
+            result = result + b
+        elif op == '-':
+            result = result - b
+        elif op == '*':
+            result = result * b
+
+    # Format
+    parts = [per_digit(operands[0])]
+    for op, b in zip(chosen_ops, operands[1:]):
+        parts.append(op)
+        parts.append(per_digit(b))
+    parts.append('=')
+    parts.append(per_digit(result))
+    return ' '.join(parts) + '\n'
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__,
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -70,6 +110,10 @@ def main():
     p.add_argument('--ops', nargs='+', default=['+'],
                    choices=['+', '-', '*', '/'],
                    help='operators to mix uniformly (default: +)')
+    p.add_argument('--mixed', action='store_true',
+                   help='generate mixed left-to-right expressions (a op1 b op2 c op3 d = result)')
+    p.add_argument('--n-ops', type=int, default=3,
+                   help='number of operations per mixed expression (default 3 -> 4 operands)')
     p.add_argument('--seed', type=int, default=20260504)
     p.add_argument('--shuffle', action='store_true', default=True,
                    help='shuffle problems before writing (default on)')
@@ -84,8 +128,11 @@ def main():
     problems = []
     for _ in range(args.n):
         d = args.digits if args.digits else rng.randint(1, args.max_digits)
-        op = rng.choice(args.ops)
-        problems.append(gen_problem(d, op, rng))
+        if args.mixed:
+            problems.append(gen_mixed(d, args.ops, args.n_ops, rng))
+        else:
+            op = rng.choice(args.ops)
+            problems.append(gen_problem(d, op, rng))
 
     if args.shuffle:
         rng.shuffle(problems)
