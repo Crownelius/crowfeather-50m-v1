@@ -1,0 +1,41 @@
+{
+  "results": [
+    {
+      "iter": "iter17",
+      "task": "collatz_step",
+      "digits": 3,
+      "sparrow": 1.0,
+      "owl": 0.5,
+      "owl_failed": 0,
+      "delta_pp": 50.0
+    },
+    {
+      "iter": "iter18",
+      "task": "collatz_time",
+      "digits": 3,
+      "sparrow": 1.0,
+      "owl": 0.02,
+      "owl_failed": 0,
+      "delta_pp": 98.0
+    },
+    {
+      "iter": "iter19",
+      "task": "goldbach",
+      "digits": 3,
+      "sparrow": 1.0,
+      "owl": 0.0,
+      "owl_failed": 0,
+      "delta_pp": 100.0
+    },
+    {
+      "iter": "iter20",
+      "task": "fermat_little",
+      "digits": 2,
+      "sparrow": 1.0,
+      "owl": 0.061224489795918366,
+      "owl_failed": 1,
+      "delta_pp": 93.87755102040816
+    }
+  ],
+  "total_elapsed_sec": 5474.924124240875
+}

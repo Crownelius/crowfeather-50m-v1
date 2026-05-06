@@ -1,0 +1,270 @@
+{
+  "n_per_task": 50,
+  "rps": 0.3,
+  "scoring": "numeric",
+  "baseline": "openrouter/owl-alpha",
+  "total_elapsed_sec": 6492.075913190842,
+  "results": [
+    {
+      "iter": "iter1",
+      "task": "add",
+      "digits": 2,
+      "status": "ok",
+      "elapsed_sec": 618.5180563926697,
+      "sparrow_acc": 1.0,
+      "owl_acc": 1.0,
+      "delta_pp": 0.0,
+      "owl_failed": 9,
+      "sparrow_p50_ms": 76.98686599731445,
+      "owl_p50_ms": 12006.18844985962,
+      "owl_usage": {
+        "input_tokens": 8569,
+        "output_tokens": 204
+      }
+    },
+    {
+      "iter": "iter2",
+      "task": "add",
+      "digits": 3,
+      "status": "ok",
+      "elapsed_sec": 434.4563946723938,
+      "sparrow_acc": 1.0,
+      "owl_acc": 1.0,
+      "delta_pp": 0.0,
+      "owl_failed": 3,
+      "sparrow_p50_ms": 103.58977317810059,
+      "owl_p50_ms": 8361.636748313904,
+      "owl_usage": {
+        "input_tokens": 11515,
+        "output_tokens": 338
+      }
+    },
+    {
+      "iter": "iter3",
+      "task": "add",
+      "digits": 4,
+      "status": "ok",
+      "elapsed_sec": 392.43892216682434,
+      "sparrow_acc": 1.0,
+      "owl_acc": 0.9787234042553191,
+      "delta_pp": 2.127659574468088,
+      "owl_failed": 3,
+      "sparrow_p50_ms": 117.2986650466919,
+      "owl_p50_ms": 7489.967975616455,
+      "owl_usage": {
+        "input_tokens": 13019,
+        "output_tokens": 426
+      }
+    },
+    {
+      "iter": "iter4",
+      "task": "sub",
+      "digits": 3,
+      "status": "ok",
+      "elapsed_sec": 429.8249897956848,
+      "sparrow_acc": 1.0,
+      "owl_acc": 1.0,
+      "delta_pp": 0.0,
+      "owl_failed": 4,
+      "sparrow_p50_ms": 88.92627239227295,
+      "owl_p50_ms": 8277.953224182129,
+      "owl_usage": {
+        "input_tokens": 10902,
+        "output_tokens": 296
+      }
+    },
+    {
+      "iter": "iter5",
+      "task": "mul",
+      "digits": 2,
+      "status": "ok",
+      "elapsed_sec": 413.0054359436035,
+      "sparrow_acc": 1.0,
+      "owl_acc": 0.9782608695652174,
+      "delta_pp": 2.1739130434782594,
+      "owl_failed": 4,
+      "sparrow_p50_ms": 92.03047752380371,
+      "owl_p50_ms": 7939.061131477356,
+      "owl_usage": {
+        "input_tokens": 10166,
+        "output_tokens": 346
+      }
+    },
+    {
+      "iter": "iter6a",
+      "task": "mul",
+      "digits": 3,
+      "status": "ok",
+      "elapsed_sec": 398.98682928085327,
+      "sparrow_acc": 0.76,
+      "owl_acc": 0.9791666666666666,
+      "delta_pp": -21.91666666666666,
+      "owl_failed": 2,
+      "sparrow_p50_ms": 140.08150100708008,
+      "owl_p50_ms": 7608.404817581177,
+      "owl_usage": {
+        "input_tokens": 12816,
+        "output_tokens": 557
+      }
+    },
+    {
+      "iter": "iter7",
+      "task": "mixed",
+      "digits": 1,
+      "status": "ok",
+      "elapsed_sec": 371.11356949806213,
+      "sparrow_acc": 0.98,
+      "owl_acc": 0.5625,
+      "delta_pp": 41.75,
+      "owl_failed": 2,
+      "sparrow_p50_ms": 53.21417808532715,
+      "owl_p50_ms": 7147.393779754639,
+      "owl_usage": {
+        "input_tokens": 10416,
+        "output_tokens": 310
+      }
+    },
+    {
+      "iter": "iter8",
+      "task": "div",
+      "digits": 3,
+      "status": "ok",
+      "elapsed_sec": 444.7399387359619,
+      "sparrow_acc": 0.88,
+      "owl_acc": 1.0,
+      "delta_pp": -12.0,
+      "owl_failed": 5,
+      "sparrow_p50_ms": 71.97662353515625,
+      "owl_p50_ms": 8594.24280166626,
+      "owl_usage": {
+        "input_tokens": 9389,
+        "output_tokens": 216
+      }
+    },
+    {
+      "iter": "iter9",
+      "task": "sub",
+      "digits": 4,
+      "status": "ok",
+      "elapsed_sec": 288.72676038742065,
+      "sparrow_acc": 1.0,
+      "owl_acc": 0.98,
+      "delta_pp": 2.0000000000000018,
+      "owl_failed": 0,
+      "sparrow_p50_ms": 109.86054420471191,
+      "owl_p50_ms": 5451.314043998718,
+      "owl_usage": {
+        "input_tokens": 13650,
+        "output_tokens": 424
+      }
+    },
+    {
+      "iter": "iter10",
+      "task": "algebra",
+      "digits": 1,
+      "status": "ok",
+      "elapsed_sec": 613.9364147186279,
+      "sparrow_acc": 1.0,
+      "owl_acc": 0.5952380952380952,
+      "delta_pp": 40.476190476190474,
+      "owl_failed": 8,
+      "sparrow_p50_ms": 52.13740348815918,
+      "owl_p50_ms": 12002.052521705627,
+      "owl_usage": {
+        "input_tokens": 9160,
+        "output_tokens": 181
+      }
+    },
+    {
+      "iter": "iter11b",
+      "task": "algebra",
+      "digits": 2,
+      "status": "ok",
+      "elapsed_sec": 538.661922454834,
+      "sparrow_acc": 0.86,
+      "owl_acc": 0.4318181818181818,
+      "delta_pp": 42.81818181818181,
+      "owl_failed": 6,
+      "sparrow_p50_ms": 109.36436653137207,
+      "owl_p50_ms": 10426.284966468811,
+      "owl_usage": {
+        "input_tokens": 12183,
+        "output_tokens": 340
+      }
+    },
+    {
+      "iter": "iter12d",
+      "task": "algebra",
+      "digits": 3,
+      "status": "ok",
+      "elapsed_sec": 404.48616337776184,
+      "sparrow_acc": 0.96,
+      "owl_acc": 0.2978723404255319,
+      "delta_pp": 66.2127659574468,
+      "owl_failed": 3,
+      "sparrow_p50_ms": 174.16678428649902,
+      "owl_p50_ms": 7694.252290725708,
+      "owl_usage": {
+        "input_tokens": 14786,
+        "output_tokens": 509
+      }
+    },
+    {
+      "iter": "iter13",
+      "task": "distribute",
+      "digits": 1,
+      "status": "ok",
+      "elapsed_sec": 373.44066739082336,
+      "sparrow_acc": 0.96,
+      "owl_acc": 0.5102040816326531,
+      "delta_pp": 44.97959183673469,
+      "owl_failed": 1,
+      "sparrow_p50_ms": 464.88264083862305,
+      "owl_p50_ms": 6739.598960876465,
+      "owl_usage": {
+        "input_tokens": 11269,
+        "output_tokens": 364
+      }
+    },
+    {
+      "iter": "iter14",
+      "task": "polymul",
+      "digits": 1,
+      "status": "ok",
+      "elapsed_sec": 363.42583870887756,
+      "sparrow_acc": 1.0,
+      "owl_acc": 1.0,
+      "delta_pp": 0.0,
+      "owl_failed": 0,
+      "sparrow_p50_ms": 1257.9421281814575,
+      "owl_p50_ms": 5632.816872596741,
+      "owl_usage": {
+        "input_tokens": 14000,
+        "output_tokens": 686
+      }
+    },
+    {
+      "iter": "iter15",
+      "task": "factor",
+      "digits": 1,
+      "status": "ok",
+      "elapsed_sec": 406.13381457328796,
+      "sparrow_acc": 1.0,
+      "owl_acc": 1.0,
+      "delta_pp": 0.0,
+      "owl_failed": 1,
+      "sparrow_p50_ms": 1352.1319103240967,
+      "owl_p50_ms": 6378.677587509155,
+      "owl_usage": {
+        "input_tokens": 13516,
+        "output_tokens": 553
+      }
+    }
+  ],
+  "tally": {
+    "wins": 8,
+    "ties": 5,
+    "losses": 2,
+    "other": 0
+  }
+}

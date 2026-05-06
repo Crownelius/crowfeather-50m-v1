@@ -1,0 +1,27 @@
+{
+  "results": [
+    {
+      "iter": "iter34",
+      "task": "mul",
+      "digits": 5,
+      "status": "ok",
+      "sparrow_calc": 1.0,
+      "owl": 0.12,
+      "gemma": 0.0,
+      "vs_owl_pp": 88.0,
+      "vs_gemma_pp": 100.0
+    },
+    {
+      "iter": "iter35",
+      "task": "div",
+      "digits": 4,
+      "status": "ok",
+      "sparrow_calc": 0.96,
+      "owl": 1.0,
+      "gemma": 0.44,
+      "vs_owl_pp": -4.0000000000000036,
+      "vs_gemma_pp": 52.0
+    }
+  ],
+  "total_elapsed_sec": 3055.532153606415
+}

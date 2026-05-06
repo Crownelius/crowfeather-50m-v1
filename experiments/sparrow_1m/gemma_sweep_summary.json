@@ -1,0 +1,355 @@
+{
+  "n_per_task": 50,
+  "rps": 1.0,
+  "scoring": "numeric",
+  "baseline": "google/gemma-3-27b-it",
+  "total_elapsed_sec": 1979.7101809978485,
+  "results": [
+    {
+      "iter": "iter1",
+      "task": "add",
+      "digits": 2,
+      "status": "ok",
+      "elapsed_sec": 99.22602653503418,
+      "sparrow_acc": 1.0,
+      "gemma_acc": 1.0,
+      "delta_pp": 0.0,
+      "gemma_failed": 0,
+      "sparrow_p50_ms": 69.35750007629395,
+      "gemma_p50_ms": 1689.5927572250366,
+      "gemma_usage": {
+        "input_tokens": 6450,
+        "output_tokens": 825
+      }
+    },
+    {
+      "iter": "iter2",
+      "task": "add",
+      "digits": 3,
+      "status": "ok",
+      "elapsed_sec": 97.47556829452515,
+      "sparrow_acc": 1.0,
+      "gemma_acc": 1.0,
+      "delta_pp": 0.0,
+      "gemma_failed": 0,
+      "sparrow_p50_ms": 96.74431800842285,
+      "gemma_p50_ms": 1622.0548009872437,
+      "gemma_usage": {
+        "input_tokens": 8249,
+        "output_tokens": 1135
+      }
+    },
+    {
+      "iter": "iter3",
+      "task": "add",
+      "digits": 4,
+      "status": "ok",
+      "elapsed_sec": 96.76053738594055,
+      "sparrow_acc": 1.0,
+      "gemma_acc": 0.98,
+      "delta_pp": 2.0000000000000018,
+      "gemma_failed": 0,
+      "sparrow_p50_ms": 123.68443489074707,
+      "gemma_p50_ms": 1586.0128355026245,
+      "gemma_usage": {
+        "input_tokens": 9847,
+        "output_tokens": 1427
+      }
+    },
+    {
+      "iter": "iter4",
+      "task": "sub",
+      "digits": 3,
+      "status": "ok",
+      "elapsed_sec": 134.97978687286377,
+      "sparrow_acc": 1.0,
+      "gemma_acc": 0.5,
+      "delta_pp": 50.0,
+      "gemma_failed": 0,
+      "sparrow_p50_ms": 94.23570156097412,
+      "gemma_p50_ms": 2372.6090574264526,
+      "gemma_usage": {
+        "input_tokens": 7848,
+        "output_tokens": 1029
+      }
+    },
+    {
+      "iter": "iter5",
+      "task": "mul",
+      "digits": 2,
+      "status": "ok",
+      "elapsed_sec": 84.99804902076721,
+      "sparrow_acc": 1.0,
+      "gemma_acc": 0.58,
+      "delta_pp": 42.00000000000001,
+      "gemma_failed": 0,
+      "sparrow_p50_ms": 96.59992694854736,
+      "gemma_p50_ms": 1341.7555665969849,
+      "gemma_usage": {
+        "input_tokens": 7047,
+        "output_tokens": 1215
+      }
+    },
+    {
+      "iter": "iter6a",
+      "task": "mul",
+      "digits": 3,
+      "status": "ok",
+      "elapsed_sec": 104.04200172424316,
+      "sparrow_acc": 0.76,
+      "gemma_acc": 0.0,
+      "delta_pp": 76.0,
+      "gemma_failed": 0,
+      "sparrow_p50_ms": 150.66473484039307,
+      "gemma_p50_ms": 1685.5657243728638,
+      "gemma_usage": {
+        "input_tokens": 9348,
+        "output_tokens": 1600
+      }
+    },
+    {
+      "iter": "iter7",
+      "task": "mixed",
+      "digits": 1,
+      "status": "ok",
+      "elapsed_sec": 80.40988731384277,
+      "sparrow_acc": 0.98,
+      "gemma_acc": 0.42,
+      "delta_pp": 56.00000000000001,
+      "gemma_failed": 0,
+      "sparrow_p50_ms": 57.95534610748291,
+      "gemma_p50_ms": 1312.5997734069824,
+      "gemma_usage": {
+        "input_tokens": 6848,
+        "output_tokens": 1032
+      }
+    },
+    {
+      "iter": "iter8",
+      "task": "div",
+      "digits": 3,
+      "status": "ok",
+      "elapsed_sec": 75.27267742156982,
+      "sparrow_acc": 0.88,
+      "gemma_acc": 0.92,
+      "delta_pp": -4.0000000000000036,
+      "gemma_failed": 0,
+      "sparrow_p50_ms": 68.00219535827637,
+      "gemma_p50_ms": 1205.7455825805664,
+      "gemma_usage": {
+        "input_tokens": 6432,
+        "output_tokens": 859
+      }
+    },
+    {
+      "iter": "iter9",
+      "task": "sub",
+      "digits": 4,
+      "status": "ok",
+      "elapsed_sec": 89.70822954177856,
+      "sparrow_acc": 1.0,
+      "gemma_acc": 0.36,
+      "delta_pp": 64.0,
+      "gemma_failed": 0,
+      "sparrow_p50_ms": 108.92582416534424,
+      "gemma_p50_ms": 1444.9731349945068,
+      "gemma_usage": {
+        "input_tokens": 9648,
+        "output_tokens": 1493
+      }
+    },
+    {
+      "iter": "iter10",
+      "task": "algebra",
+      "digits": 1,
+      "status": "ok",
+      "elapsed_sec": 83.56863570213318,
+      "sparrow_acc": 1.0,
+      "gemma_acc": 0.0,
+      "delta_pp": 100.0,
+      "gemma_failed": 0,
+      "sparrow_p50_ms": 49.020628929138184,
+      "gemma_p50_ms": 1366.2420749664307,
+      "gemma_usage": {
+        "input_tokens": 6905,
+        "output_tokens": 1600
+      }
+    },
+    {
+      "iter": "iter11b",
+      "task": "algebra",
+      "digits": 2,
+      "status": "ok",
+      "elapsed_sec": 94.84319567680359,
+      "sparrow_acc": 0.86,
+      "gemma_acc": 0.0,
+      "delta_pp": 86.0,
+      "gemma_failed": 0,
+      "sparrow_p50_ms": 121.88339233398438,
+      "gemma_p50_ms": 1525.4720640182495,
+      "gemma_usage": {
+        "input_tokens": 9837,
+        "output_tokens": 1600
+      }
+    },
+    {
+      "iter": "iter12d",
+      "task": "algebra",
+      "digits": 3,
+      "status": "ok",
+      "elapsed_sec": 95.17299199104309,
+      "sparrow_acc": 0.96,
+      "gemma_acc": 0.0,
+      "delta_pp": 96.0,
+      "gemma_failed": 0,
+      "sparrow_p50_ms": 168.72437000274658,
+      "gemma_p50_ms": 1471.277265548706,
+      "gemma_usage": {
+        "input_tokens": 11728,
+        "output_tokens": 1600
+      }
+    },
+    {
+      "iter": "iter13",
+      "task": "distribute",
+      "digits": 1,
+      "status": "ok",
+      "elapsed_sec": 84.81174373626709,
+      "sparrow_acc": 0.96,
+      "gemma_acc": 0.08,
+      "delta_pp": 88.0,
+      "gemma_failed": 0,
+      "sparrow_p50_ms": 146.9968605041504,
+      "gemma_p50_ms": 1293.8019752502441,
+      "gemma_usage": {
+        "input_tokens": 7497,
+        "output_tokens": 931
+      }
+    },
+    {
+      "iter": "iter14",
+      "task": "polymul",
+      "digits": 1,
+      "status": "ok",
+      "elapsed_sec": 99.27960729598999,
+      "sparrow_acc": 1.0,
+      "gemma_acc": 0.02,
+      "delta_pp": 98.0,
+      "gemma_failed": 0,
+      "sparrow_p50_ms": 240.57902812957764,
+      "gemma_p50_ms": 1503.4278392791748,
+      "gemma_usage": {
+        "input_tokens": 9996,
+        "output_tokens": 1382
+      }
+    },
+    {
+      "iter": "iter15",
+      "task": "factor",
+      "digits": 1,
+      "status": "ok",
+      "elapsed_sec": 99.03846573829651,
+      "sparrow_acc": 1.0,
+      "gemma_acc": 0.0,
+      "delta_pp": 100.0,
+      "gemma_failed": 0,
+      "sparrow_p50_ms": 250.1694917678833,
+      "gemma_p50_ms": 1476.9979000091553,
+      "gemma_usage": {
+        "input_tokens": 10040,
+        "output_tokens": 1411
+      }
+    },
+    {
+      "iter": "iter16",
+      "task": "diff",
+      "digits": 1,
+      "status": "ok",
+      "elapsed_sec": 95.82968783378601,
+      "sparrow_acc": 1.0,
+      "gemma_acc": 0.0,
+      "delta_pp": 100.0,
+      "gemma_failed": 0,
+      "sparrow_p50_ms": 121.03482246398926,
+      "gemma_p50_ms": 1568.064465522766,
+      "gemma_usage": {
+        "input_tokens": 10247,
+        "output_tokens": 1447
+      }
+    },
+    {
+      "iter": "iter17",
+      "task": "collatz_step",
+      "digits": 3,
+      "status": "ok",
+      "elapsed_sec": 94.02150893211365,
+      "sparrow_acc": 1.0,
+      "gemma_acc": 0.0,
+      "delta_pp": 100.0,
+      "gemma_failed": 0,
+      "sparrow_p50_ms": 86.3039493560791,
+      "gemma_p50_ms": 1556.2955951690674,
+      "gemma_usage": {
+        "input_tokens": 7747,
+        "output_tokens": 1600
+      }
+    },
+    {
+      "iter": "iter18",
+      "task": "collatz_time",
+      "digits": 3,
+      "status": "ok",
+      "elapsed_sec": 105.04990482330322,
+      "sparrow_acc": 1.0,
+      "gemma_acc": 0.0,
+      "delta_pp": 100.0,
+      "gemma_failed": 0,
+      "sparrow_p50_ms": 60.40543556213379,
+      "gemma_p50_ms": 1799.2158031463623,
+      "gemma_usage": {
+        "input_tokens": 7248,
+        "output_tokens": 1600
+      }
+    },
+    {
+      "iter": "iter19",
+      "task": "goldbach",
+      "digits": 3,
+      "status": "ok",
+      "elapsed_sec": 95.45121741294861,
+      "sparrow_acc": 1.0,
+      "gemma_acc": 0.02,
+      "delta_pp": 98.0,
+      "gemma_failed": 0,
+      "sparrow_p50_ms": 129.97979164123535,
+      "gemma_p50_ms": 1543.6281728744507,
+      "gemma_usage": {
+        "input_tokens": 8497,
+        "output_tokens": 1369
+      }
+    },
+    {
+      "iter": "iter20",
+      "task": "fermat_little",
+      "digits": 2,
+      "status": "ok",
+      "elapsed_sec": 169.57202339172363,
+      "sparrow_acc": 1.0,
+      "gemma_acc": 0.0,
+      "delta_pp": 100.0,
+      "gemma_failed": 0,
+      "sparrow_p50_ms": 47.8074836730957,
+      "gemma_p50_ms": 3113.6387825012207,
+      "gemma_usage": {
+        "input_tokens": 7716,
+        "output_tokens": 1585
+      }
+    }
+  ],
+  "tally": {
+    "wins": 17,
+    "ties": 2,
+    "losses": 1,
+    "other": 0
+  }
+}
